@@ -26,21 +26,23 @@ function MetricTileInner({ label, value, trend, sparkline, color = 'hsl(var(--id
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`group rounded-lg border border-border bg-card p-4 flex flex-col gap-2 transition-all duration-200 ${
-        href ? 'cursor-pointer hover:border-idma-green/50' : ''
-      } hover:shadow-lg hover:shadow-idma-green/5`}
+      className={`group glass-card glass-card-hover shine-effect rounded-lg p-3 sm:p-4 flex flex-col gap-1.5 ${
+        href ? 'cursor-pointer' : ''
+      }`}
       onClick={href ? () => navigate(href) : undefined}
     >
-      <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
+      <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
       <div className="flex items-end justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-mono font-bold text-foreground">
-            {numericValue !== null ? animatedValue : value}
-            {suffix && <span className="text-sm text-muted-foreground ml-1">{suffix}</span>}
-          </span>
-          {trend === 'up' && <ArrowUp size={14} className="text-idma-green" />}
-          {trend === 'down' && <ArrowDown size={14} className="text-destructive" />}
-          {trend === 'stable' && <Minus size={14} className="text-muted-foreground" />}
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xl sm:text-2xl font-mono font-bold text-foreground">
+              {numericValue !== null ? animatedValue : value}
+            </span>
+            {trend === 'up' && <ArrowUp size={14} className="text-[hsl(var(--idma-green))]" />}
+            {trend === 'down' && <ArrowDown size={14} className="text-destructive" />}
+            {trend === 'stable' && <Minus size={14} className="text-muted-foreground" />}
+          </div>
+          {suffix && <span className="text-[10px] sm:text-xs text-muted-foreground">{suffix}</span>}
         </div>
         {sparkline && <Sparkline data={sparkline} color={color} />}
       </div>
