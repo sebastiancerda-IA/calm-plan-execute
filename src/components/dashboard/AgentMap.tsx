@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockAgents } from '@/data/mockAgents';
+import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
 import { StatusDot } from '@/components/shared/StatusDot';
 
 function timeAgo(iso?: string) {
@@ -13,19 +13,21 @@ function timeAgo(iso?: string) {
 }
 
 interface AgentNodeProps {
-  agent: (typeof mockAgents)[0];
+  agent: any;
+  allAgents: any[];
   hovered: string | null;
   onHover: (id: string | null) => void;
   nodeRef: (el: HTMLDivElement | null) => void;
 }
 
-function AgentNode({ agent, hovered, onHover, nodeRef }: AgentNodeProps) {
+function AgentNode({ agent, allAgents, hovered, onHover, nodeRef }: AgentNodeProps) {
   const navigate = useNavigate();
+  const deps = agent.dependencies || [];
   const isHighlighted =
     !hovered ||
     hovered === agent.id ||
-    agent.dependencies.includes(hovered) ||
-    mockAgents.find((a) => a.id === hovered)?.dependencies.includes(agent.id);
+    deps.includes(hovered) ||
+    allAgents.find((a: any) => a.id === hovered)?.dependencies?.includes(agent.id);
 
   return (
     <div
@@ -50,28 +52,29 @@ function AgentNode({ agent, hovered, onHover, nodeRef }: AgentNodeProps) {
       </div>
       <div className="text-xs text-foreground font-medium truncate mb-1">{agent.name}</div>
       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{timeAgo(agent.lastRun)}</span>
-        <span className="font-mono">{agent.itemsProcessed24h} items</span>
+        <span>{timeAgo(agent.last_run)}</span>
+        <span className="font-mono">{agent.items_processed_24h} items</span>
       </div>
     </div>
   );
 }
 
 export function AgentMap() {
+  const { agents } = useSupabaseAgents();
   const [hovered, setHovered] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; fromId: string; toId: string }[]>([]);
 
   const { dios, operatives, transversals, infra } = useMemo(() => {
-    const dios = mockAgents.filter((a) => a.code === 'DIOS');
-    const infra = mockAgents.filter((a) => ['A3', 'A3q'].includes(a.code));
-    const transversals = mockAgents.filter((a) => ['A2', 'A1+', 'D3'].includes(a.code));
-    const operatives = mockAgents.filter(
-      (a) => !dios.includes(a) && !infra.includes(a) && !transversals.includes(a)
+    const dios = agents.filter((a: any) => a.code === 'AD');
+    const infra = agents.filter((a: any) => ['A3', 'A3Q'].includes(a.code));
+    const transversals = agents.filter((a: any) => ['A2', 'A1+', 'D3'].includes(a.code));
+    const operatives = agents.filter(
+      (a: any) => !dios.includes(a) && !infra.includes(a) && !transversals.includes(a)
     );
     return { dios, operatives, transversals, infra };
-  }, []);
+  }, [agents]);
 
   const calcLines = useCallback(() => {
     const container = containerRef.current;
@@ -79,8 +82,8 @@ export function AgentMap() {
     const cRect = container.getBoundingClientRect();
     const newLines: typeof lines = [];
 
-    mockAgents.forEach((agent) => {
-      agent.dependencies.forEach((depId) => {
+    agents.forEach((agent: any) => {
+      (agent.dependencies || []).forEach((depId: string) => {
         const fromEl = nodeRefs.current.get(agent.id);
         const toEl = nodeRefs.current.get(depId);
         if (!fromEl || !toEl) return;
@@ -97,14 +100,15 @@ export function AgentMap() {
       });
     });
     setLines(newLines);
-  }, []);
+  }, [agents]);
 
   useEffect(() => {
-    calcLines();
+    const timer = setTimeout(calcLines, 100);
     const ro = new ResizeObserver(calcLines);
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', calcLines);
     return () => {
+      clearTimeout(timer);
       ro.disconnect();
       window.removeEventListener('resize', calcLines);
     };
@@ -115,13 +119,14 @@ export function AgentMap() {
     else nodeRefs.current.delete(id);
   }, []);
 
+  if (agents.length === 0) return null;
+
   return (
     <div ref={containerRef} className="rounded-md border border-border bg-[#0D1321] p-4 relative">
       <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-4">
         Mapa de Agentes
       </h3>
 
-      {/* SVG Connection Lines */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
         {lines.map((line, i) => {
           const isActive = hovered && (hovered === line.fromId || hovered === line.toId);
@@ -141,30 +146,27 @@ export function AgentMap() {
       </svg>
 
       <div className="space-y-4 relative z-10">
-        {/* Nivel 0: Agente Dios */}
         <div className="flex justify-center">
           <div className="w-full max-w-xs">
-            {dios.map((a) => (
-              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
+            {dios.map((a: any) => (
+              <AgentNode key={a.id} agent={a} allAgents={agents} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
             ))}
           </div>
         </div>
 
-        {/* Nivel 1: Operativos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          {operatives.map((a) => (
-            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
+          {operatives.map((a: any) => (
+            <AgentNode key={a.id} agent={a} allAgents={agents} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
           ))}
         </div>
 
-        {/* Nivel 2: Transversales + Infra */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          {transversals.map((a) => (
-            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
+          {transversals.map((a: any) => (
+            <AgentNode key={a.id} agent={a} allAgents={agents} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
           ))}
           <div className="col-span-2 grid grid-cols-2 gap-2">
-            {infra.map((a) => (
-              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
+            {infra.map((a: any) => (
+              <AgentNode key={a.id} agent={a} allAgents={agents} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
             ))}
           </div>
         </div>

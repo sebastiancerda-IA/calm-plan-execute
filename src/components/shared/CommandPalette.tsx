@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
+import { useSupabaseAlerts } from '@/hooks/useSupabaseAlerts';
+import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { mockAgents } from '@/data/mockAgents';
-import { mockCriteria } from '@/data/mockCNA';
-import { mockAlerts } from '@/data/mockAlerts';
 import { LayoutDashboard, Users, Shield, AlertTriangle, Database, Settings } from 'lucide-react';
 
 const pages = [
@@ -18,6 +18,9 @@ const pages = [
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { agents } = useSupabaseAgents();
+  const { alerts } = useSupabaseAlerts();
+  const { criteria } = useSupabaseCNA();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -35,6 +38,8 @@ export function CommandPalette() {
     setOpen(false);
   };
 
+  const activeAlerts = alerts.filter((a: any) => !a.resolved).slice(0, 5);
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="Buscar agentes, criterios, alertas..." />
@@ -49,7 +54,7 @@ export function CommandPalette() {
           ))}
         </CommandGroup>
         <CommandGroup heading="Agentes">
-          {mockAgents.map((a) => (
+          {agents.map((a: any) => (
             <CommandItem key={a.id} onSelect={() => go(`/agent/${a.id}`)}>
               <span className="font-mono text-xs mr-2" style={{ color: a.color }}>{a.code}</span>
               {a.name}
@@ -57,21 +62,23 @@ export function CommandPalette() {
           ))}
         </CommandGroup>
         <CommandGroup heading="Criterios CNA">
-          {mockCriteria.map((c) => (
+          {criteria.map((c: any) => (
             <CommandItem key={c.id} onSelect={() => go(`/cna?expand=${c.id}`)}>
               <span className="font-mono text-xs mr-2">{c.id}</span>
               {c.name}
             </CommandItem>
           ))}
         </CommandGroup>
-        <CommandGroup heading="Alertas">
-          {mockAlerts.filter((a) => !a.resolved).slice(0, 5).map((a) => (
-            <CommandItem key={a.id} onSelect={() => go('/alerts')}>
-              <AlertTriangle className="mr-2 h-3 w-3" style={{ color: a.priority === 'critica' ? '#EF4444' : '#F97316' }} />
-              {a.title}
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        {activeAlerts.length > 0 && (
+          <CommandGroup heading="Alertas">
+            {activeAlerts.map((a: any) => (
+              <CommandItem key={a.id} onSelect={() => go('/alerts')}>
+                <AlertTriangle className="mr-2 h-3 w-3" style={{ color: a.priority === 'critica' ? '#EF4444' : '#F97316' }} />
+                {a.title}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
       </CommandList>
     </CommandDialog>
   );

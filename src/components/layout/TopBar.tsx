@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { AudioWaveform } from 'lucide-react';
+import { AudioWaveform, LogOut } from 'lucide-react';
 import { StatusDot } from '@/components/shared/StatusDot';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function TopBar() {
   const [now, setNow] = useState(new Date());
   const [uptime, setUptime] = useState(0);
+  const { user, role, signOut } = useAuth();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -17,7 +19,6 @@ export function TopBar() {
 
   const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const dateStr = now.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-
   const uptimeStr = uptime < 60 ? `${uptime}m` : `${Math.floor(uptime / 60)}h ${uptime % 60}m`;
 
   return (
@@ -42,6 +43,16 @@ export function TopBar() {
         <div className="text-xs text-muted-foreground font-mono">
           <span className="hidden sm:inline">{dateStr} </span>{timeStr}
         </div>
+        {user && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground font-mono hidden md:inline">
+              {user.email?.split('@')[0]} <span className="text-primary">({role})</span>
+            </span>
+            <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors">
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
