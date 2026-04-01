@@ -137,7 +137,7 @@ PROGRAMAS OTEC ACTIVOS: ${(otecRes.data || []).map((p: any) => `${p.name} (${p.t
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,

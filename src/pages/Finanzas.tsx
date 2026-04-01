@@ -120,7 +120,12 @@ function FinancialChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, mode]);
+  }, [messages, isLoading, mode, selectedModel]);
+
+  const handleModelChange = (val: string) => {
+    setSelectedModel(val);
+    localStorage.setItem('fin_model', val);
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-220px)] min-h-[400px]">
