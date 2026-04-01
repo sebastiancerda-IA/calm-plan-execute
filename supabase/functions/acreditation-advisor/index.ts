@@ -27,7 +27,7 @@ LECCIONES COMUNES DE INSTITUCIONES EXITOSAS:
 8. Cuerpo docente evaluado y con plan de desarrollo
 `;
 
-const SYSTEM_ASESOR = `Eres el Asesor Estratégico de Acreditación de CFT IDMA, institución chilena de educación técnico-profesional ambiental.
+const SYSTEM_ASESOR = `Eres el Agente Dios — Asesor Estratégico de Acreditación de CFT IDMA, institución chilena de educación técnico-profesional ambiental.
 
 Tu rol es GUIAR hacia la máxima acreditación posible. Eres constructivo, estratégico y orientado a soluciones.
 
@@ -75,14 +75,20 @@ serve(async (req) => {
 
     const { messages, mode = "asesor" } = await req.json();
 
-    // Fetch dynamic context
-    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes] = await Promise.all([
+    // Fetch dynamic context including RAG doc count
+    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, ragRes] = await Promise.all([
       supabase.from("cna_criteria").select("*").order("id"),
       supabase.from("alerts").select("title, priority, description").eq("resolved", false).limit(10),
       supabase.from("acreditation_documents").select("title, document_type, criterio_cna, processed, summary").order("uploaded_at", { ascending: false }).limit(20),
       supabase.from("institutional_metrics").select("metric_key, metric_value, period").order("period", { ascending: false }).limit(15),
       supabase.from("otec_programs").select("name, type, status, students_enrolled").eq("status", "activo"),
+      supabase.from("rag_documents").select("id, titulo, fuente, categoria, criterios_cna").limit(100),
     ]);
+
+    const ragCount = ragRes.data?.length || 0;
+    const ragDocsContext = ragCount > 0
+      ? `DOCUMENTOS INDEXADOS EN RAG (${ragCount}):\n${(ragRes.data || []).map((d: any) => `- ${d.titulo} (${d.fuente || 'manual'}, categoría: ${d.categoria || 'general'}, criterios: ${(d.criterios_cna || []).join(', ') || 'ninguno'})`).join("\n")}`
+      : "NO HAY DOCUMENTOS CARGADOS EN RAG AÚN. Tus respuestas serán basadas en conocimiento general CNA y los benchmarks proporcionados. Indica al usuario que cargue documentos para obtener análisis específicos de IDMA.";
 
     const criteriaContext = (criteriaRes.data || []).map((c: any) =>
       `${c.id} "${c.name}" [${c.dimension}] — Actual: ${c.current_level}, Meta: ${c.target_level}, Evidencias: ${c.evidence_count}, Prioritario: ${c.is_priority ? 'SÍ' : 'no'}, Obligatorio: ${c.is_mandatory ? 'SÍ' : 'no'}, Brecha: ${c.gap_description || 'N/A'}`
@@ -97,10 +103,13 @@ serve(async (req) => {
     ).join(", ");
 
     const dynamicContext = `
+ESTADO DE RAG:
+${ragDocsContext}
+
 ESTADO ACTUAL DE CRITERIOS CNA (${criteriaRes.data?.length || 0} criterios):
 ${criteriaContext}
 
-DOCUMENTOS CARGADOS (${docsRes.data?.length || 0}):
+DOCUMENTOS DE ACREDITACIÓN CARGADOS (${docsRes.data?.length || 0}):
 ${docsContext || "Ninguno aún"}
 
 ALERTAS ACTIVAS: ${alertsRes.data?.length || 0}
