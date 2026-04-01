@@ -23,6 +23,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Acreditacion = lazy(() => import('./pages/Acreditacion'));
 const Finanzas = lazy(() => import('./pages/Finanzas'));
 const Convenios = lazy(() => import('./pages/Convenios'));
+const Install = lazy(() => import('./pages/Install'));
 const Login = lazy(() => import('./pages/Login'));
 const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
@@ -91,6 +92,7 @@ function AuthenticatedApp() {
               <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/finanzas" element={<Finanzas />} />
               <Route path="/convenios" element={<Convenios />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </PageTransition>
