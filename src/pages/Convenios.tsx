@@ -235,9 +235,19 @@ export default function Convenios() {
           <Handshake size={22} /> Convenios Institucionales
         </h1>
         {isDirector && (
-          <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-            <Plus size={14} /> Nuevo Convenio
-          </Button>
+          <div className="flex items-center gap-2">
+            {convenios.length > 0 && (
+              <button
+                onClick={() => exportConvenios(convenios)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
+              >
+                <Download size={12} /> Exportar
+              </button>
+            )}
+            <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
+              <Plus size={14} /> Nuevo Convenio
+            </Button>
+          </div>
         )}
       </div>
 
