@@ -18,7 +18,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { type } = await req.json();
+    const ALLOWED_MODELS = [
+      "google/gemini-3-flash-preview",
+      "google/gemini-2.5-pro",
+      "openai/gpt-5",
+      "openai/gpt-5-mini",
+    ];
+
+    const { type, model: requestedModel } = await req.json();
+    const model = ALLOWED_MODELS.includes(requestedModel) ? requestedModel : "google/gemini-3-flash-preview";
 
     // Fetch current CNA state
     const { data: criteria } = await supabase
