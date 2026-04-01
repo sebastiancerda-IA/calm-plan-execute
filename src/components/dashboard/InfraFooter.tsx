@@ -3,9 +3,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 const infraItems = [
   { name: 'n8n Cloud', status: 'activo' as const, detail: '4 workflows', tooltip: 'Starter plan • sebastiancerda-ia.app.n8n.cloud • 4 workflows activos' },
-  { name: 'Qdrant', status: 'activo' as const, detail: '51 pts', tooltip: 'Railway free tier • 51 puntos / 1M capacidad • Colección: idma_knowledge' },
+  { name: 'Qdrant', status: 'activo' as const, detail: '51 pts', tooltip: 'Railway Pro • 51 puntos / 1M capacidad • Colección: idma_knowledge' },
   { name: 'Jina AI', status: 'activo' as const, detail: '0.37% usado', tooltip: 'Free tier • 3,700 / 1M tokens • Embedding r1' },
   { name: 'Gemini 2.5 Flash', status: 'activo' as const, detail: 'Nivel 1', tooltip: 'Google AI Studio • Nivel 1 gratuito • Clasificación de emails' },
+  { name: 'Telegram Bot', status: 'activo' as const, detail: 'Alertas', tooltip: 'Canal de alertas críticas y resumen diario al director' },
+  { name: 'Email IDMA', status: 'activo' as const, detail: '@idma.cl', tooltip: 'Dominio institucional para emails de autenticación y notificaciones' },
   { name: 'Costo mensual IA', status: 'activo' as const, detail: '$0', tooltip: 'Todo en free tier. Sin costos recurrentes por servicios IA.' },
 ];
 

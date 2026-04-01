@@ -351,6 +351,20 @@ export default function Convenios() {
                         {c.fecha_termino ? ` → ${new Date(c.fecha_termino).toLocaleDateString('es-CL')}` : ''}
                       </td>
                       <td className="py-2 px-3">
+                        {c.archivo_drive_url ? (
+                          <a
+                            href={c.archivo_drive_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                          >
+                            <FileText size={10} /> Ver doc
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-[10px]">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3">
                         {c.criterios_cna?.length > 0 ? (
                           <div className="flex gap-1 flex-wrap">
                             {c.criterios_cna.map((cr: string) => (

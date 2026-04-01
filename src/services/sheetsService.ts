@@ -1,24 +1,45 @@
-import { ClassifiedEmail } from '@/types';
-import { mockEmails } from '@/data/mockEmails';
+import { supabase } from '@/integrations/supabase/client';
 
-// TODO: Conectar via Google Sheets API
-// VCM Log: 1RQqDIdvGRiCQQMAq_5WyZIkIEndu0yXWkzHAtJmHrX0
-// OTEC Log: 10tUOdcfA_4k8GHDL0yaVXIxG6sGx2j9S8iB4AHYSHUE
+// Datos reales desde Supabase — n8n sincroniza Sheets → email_logs y otec_programs
 
 interface SheetsService {
-  getRecentEmails(agente: string, limit: number): Promise<ClassifiedEmail[]>;
+  getRecentEmails(agente: string, limit: number): Promise<any[]>;
   getMetrics(): Promise<Record<string, number>>;
 }
 
 export const sheetsService: SheetsService = {
   async getRecentEmails(agente: string, limit: number) {
-    return mockEmails.filter((e) => e.agente === agente).slice(0, limit);
+    const { data, error } = await supabase
+      .from('email_logs')
+      .select('*')
+      .eq('agent_id', agente)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('sheetsService.getRecentEmails error:', error);
+      return [];
+    }
+    return data || [];
   },
   async getMetrics() {
+    const { count: totalEmails } = await supabase
+      .from('email_logs')
+      .select('id', { count: 'exact', head: true });
+
+    const { count: accionRequerida } = await supabase
+      .from('email_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('accion_requerida', true);
+
+    const { count: criticas } = await supabase
+      .from('email_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('prioridad', 'critica');
+
     return {
-      totalEmails: mockEmails.length,
-      accionRequerida: mockEmails.filter((e) => e.accion_requerida).length,
-      criticas: mockEmails.filter((e) => e.prioridad === 'critica').length,
+      totalEmails: totalEmails || 0,
+      accionRequerida: accionRequerida || 0,
+      criticas: criticas || 0,
     };
   },
 };
