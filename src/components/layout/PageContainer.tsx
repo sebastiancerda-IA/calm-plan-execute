@@ -19,7 +19,7 @@ export function PageContainer({ children }: PageContainerProps) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <TopBar />
-        <main className="flex-1 overflow-auto p-4 pb-20">
+        <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 pb-20">
           {children}
         </main>
         <MobileNav />
