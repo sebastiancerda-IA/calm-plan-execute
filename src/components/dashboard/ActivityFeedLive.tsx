@@ -1,8 +1,7 @@
-import { memo, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, AlertTriangle, Play } from 'lucide-react';
-import { toast } from 'sonner';
 
 function timeAgo(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
@@ -54,7 +53,6 @@ function FeedItem({ ev }: { ev: FeedEvent }) {
 const MemoFeedItem = memo(FeedItem);
 
 export function ActivityFeedLive() {
-  const queryClient = useQueryClient();
 
   const { data: events = [] } = useQuery({
     queryKey: ['activity_feed'],
@@ -118,16 +116,7 @@ export function ActivityFeedLive() {
     refetchInterval: 60000,
   });
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('feed_rag_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rag_documents' }, (payload) => {
-        toast.info(`📄 Documento indexado en RAG: ${(payload.new as any).titulo}`);
-        queryClient.invalidateQueries({ queryKey: ['activity_feed'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  // Realtime handled centrally in useNotifications — no duplicate channel here
 
   return (
     <div className="rounded-md border border-border bg-card p-4 h-full">

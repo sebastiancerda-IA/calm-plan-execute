@@ -1,26 +1,22 @@
-import { RAGDocument } from '@/types';
-import { mockDocuments, ragStats } from '@/data/mockRAG';
+import { supabase } from '@/integrations/supabase/client';
 
-// TODO: Conectar a https://qdrant-production-e4a5.up.railway.app
-// Collection: idma_knowledge
+// Real data from Supabase — replaces mock Qdrant service
 
 interface QdrantService {
   getCollectionInfo(): Promise<{ points: number; vectors: number }>;
-  search(query: string, topK: number): Promise<RAGDocument[]>;
+  search(query: string, topK: number): Promise<any[]>;
 }
 
 export const qdrantService: QdrantService = {
   async getCollectionInfo() {
-    return { points: ragStats.totalPoints, vectors: ragStats.totalPoints * 4 };
+    const { count } = await supabase
+      .from('rag_documents')
+      .select('id', { count: 'exact', head: true });
+    const points = count || 0;
+    return { points, vectors: points * 4 };
   },
-  async search(query: string, topK: number) {
-    const q = query.toLowerCase();
-    return mockDocuments
-      .map((doc) => ({
-        ...doc,
-        score: doc.titulo.toLowerCase().includes(q) ? 0.85 + Math.random() * 0.15 : 0.3 + Math.random() * 0.4,
-      }))
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, topK);
+  async search(_query: string, _topK: number) {
+    // Search handled via acreditation-advisor edge function
+    return [];
   },
 };

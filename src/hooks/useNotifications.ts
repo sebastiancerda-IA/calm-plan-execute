@@ -3,6 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+/**
+ * Consolidated realtime + native notifications.
+ * 
+ * IMPORTANT: This is the SINGLE source of realtime subscriptions for:
+ * - alerts (INSERT)
+ * - rag_documents (INSERT)
+ * 
+ * Do NOT add duplicate subscriptions in other components.
+ * App.tsx RealtimeProvider handles agents table only.
+ */
 export function useNotifications() {
   const queryClient = useQueryClient();
   const permissionRef = useRef<NotificationPermission>('default');
@@ -27,22 +37,23 @@ export function useNotifications() {
     }
   }, []);
 
-  // Realtime subscription for alerts
+  // Single realtime channel for alerts + rag_documents
   useEffect(() => {
     const channel = supabase
-      .channel('alert-notifications')
+      .channel('global-notifications')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
         const alert = payload.new as any;
         const priorityEmoji = alert.priority === 'critica' ? '🔴' : alert.priority === 'alta' ? '🟠' : '🟡';
         toast.warning(`${priorityEmoji} ${alert.title}`, { description: alert.description?.slice(0, 80) });
         sendNative(`Alerta ${alert.priority}`, alert.title);
         queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        queryClient.invalidateQueries({ queryKey: ['activity_feed'] });
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rag_documents' }, (payload) => {
         const doc = payload.new as any;
         toast.info(`📄 Nuevo documento RAG: ${doc.titulo}`, { duration: 5000 });
         queryClient.invalidateQueries({ queryKey: ['rag_documents'] });
-        queryClient.invalidateQueries({ queryKey: ['rag_count'] });
+        queryClient.invalidateQueries({ queryKey: ['activity_feed'] });
       })
       .subscribe();
 
