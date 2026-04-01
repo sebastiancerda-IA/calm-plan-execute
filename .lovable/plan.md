@@ -1,89 +1,60 @@
 
 
-# Plan: Optimización UI/UX + Preparación Auto-Traspaso
+# Plan: Integraciones Estratégicas — Google Workspace + Alertas + Email
 
-## 1. Glass-Morphism + Visual Polish
+## Prioridad inmediata (implementable ahora)
 
-### `src/index.css`
-- Agregar custom scrollbar styling (thin, colores IDMA)
-- Agregar utilities: `.glass-card` (backdrop-blur + borde semi-transparente), `.glass-card-hover` (glow verde al hover), `.glow-green` (shadow verde), `.shine-effect` (brillo diagonal animado al hover)
-- Agregar keyframes: `fadeInUp`, `shimmer` (para skeletons)
+### 1. Google Sheets → n8n → Orchestrator API (sin connector, via n8n)
+Ya tienes n8n con acceso a Google. El flujo:
+- n8n lee los spreadsheets VCM Log y OTEC Log cada 6 horas
+- Envía datos al `n8n-webhook` edge function
+- Se almacenan en tablas existentes (`email_logs`, `otec_programs`)
+- **Acción**: Actualizar `sheetsService.ts` para leer de Supabase en vez de mock data
 
-### `src/components/shared/MetricTile.tsx`
-- Aplicar clases `glass-card glass-card-hover shine-effect` en vez del border/bg estático
-- Mover `suffix` debajo del valor como línea separada (mejor legibilidad en móvil)
-- Reducir font-size a `text-xl sm:text-2xl` para responsive
+### 2. Email Institucional Branded
+Configurar envío de emails desde dominio idma.cl:
+- Emails de autenticación (password reset, verificación) con branding IDMA
+- Notificaciones transaccionales (alertas críticas, reportes)
+- **Acción**: Configurar email domain + scaffold auth email templates
 
-### `src/components/dashboard/WelcomeCard.tsx`
-- Usar `glass-card glow-green` en vez del bg gradient estático
-- Agregar barra gradient animada en el top (2px)
-- Stagger animation con framer-motion en los feature items
-- AnimatePresence para dismiss suave
+### 3. Telegram Bot — Canal de Alertas Críticas
+Usar el connector de Telegram disponible para:
+- Edge function que envía alertas críticas al teléfono del director
+- Resumen diario automático del estado del sistema
+- **Acción**: Conectar Telegram connector + crear edge function `telegram-alerts`
 
-## 2. Loading States Mejorados
+### 4. Google Drive Links en Convenios y Acreditación
+No requiere API directa — n8n ya tiene acceso a Drive:
+- Los convenios ya tienen `archivo_drive_url` — solo necesitamos UI para abrir/vincular
+- Documentos de acreditación linkean a Drive folders
+- **Acción**: Mejorar UI de upload en Convenios y Acreditación para aceptar URLs de Drive
 
-### `src/components/shared/SkeletonLoader.tsx`
-- Rediseñar con 3 variantes: `page` (grid de cards + bloque), `widget` (card individual), `mini` (barra inline)
-- Usar shimmer animation en vez de barras pulsantes
-- Forma que simula el contenido real
+### 5. n8n como Conector MCP
+Conectar el MCP de n8n disponible en el catálogo para:
+- Ver workflows y su estado directamente desde Lovable
+- Monitorear ejecuciones sin salir de la plataforma
 
-### `src/components/shared/PageTransition.tsx`
-- Cambiar de `y: 8` a `scale: 0.98 + y: 6` para transición más suave
-- Easing curve mejorada `[0.25, 0.1, 0.25, 1]`
-
-### `src/pages/Dashboard.tsx`
-- Reemplazar `WidgetFallback` con `<SkeletonLoader variant="widget" />`
-
-## 3. Mobile + Responsive
-
-### `src/components/layout/MobileNav.tsx`
-- Agregar pill indicator animado (motion.div) bajo el tab activo usando `layoutId`
-- Scale down sutil al tap (`whileTap={{ scale: 0.95 }}`)
-
-### `src/components/dashboard/GlobalMetrics.tsx` e `InstitutionalMetrics.tsx`
-- Cambiar grid de `grid-cols-1 sm:grid-cols-2` a `grid-cols-2 sm:grid-cols-2` (2 cols en 390px)
-- Padding más compacto en móvil
-
-### `src/components/layout/PageContainer.tsx`
-- Main padding: `p-3 sm:p-4 lg:p-6` (más granular)
-- Agregar `scroll-smooth` al contenedor
-
-## 4. Preparación Auto-Traspaso
-
-### `src/lib/systemHealth.ts` (nuevo)
-- Función `getSystemHealth()` que retorna objeto con:
-  - `version`, `features` activas (array de strings)
-  - `tables` con estado (populated/empty)
-  - `edgeFunctions` disponibles
-  - `uiComponents` count
-  - `lastCheck` timestamp
-- Exportable para uso interno y desde orchestrator-api
-
-### `supabase/functions/orchestrator-api/index.ts`
-- Enriquecer `get_status` con bloque `ui_state`: version, features, component_count
-- Agregar action `get_ui_state` que retorna config visual + features + health
-
-## Archivos
+## Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/index.css` | Glass utilities, scrollbar, shimmer |
-| `src/components/shared/MetricTile.tsx` | Glass + shine + responsive |
-| `src/components/shared/SkeletonLoader.tsx` | Rediseño 3 variantes |
-| `src/components/shared/PageTransition.tsx` | Scale + easing |
-| `src/components/dashboard/WelcomeCard.tsx` | Glass + glow + stagger |
-| `src/components/dashboard/GlobalMetrics.tsx` | 2-col mobile grid |
-| `src/components/dashboard/InstitutionalMetrics.tsx` | 2-col mobile grid |
-| `src/components/layout/MobileNav.tsx` | Animated pill indicator |
-| `src/components/layout/PageContainer.tsx` | Responsive padding |
-| `src/pages/Dashboard.tsx` | Widget fallback mejorado |
-| `src/lib/systemHealth.ts` | Nuevo — estado para traspaso |
-| `supabase/functions/orchestrator-api/index.ts` | get_ui_state action |
+| `src/services/sheetsService.ts` | Reemplazar mock → queries Supabase reales |
+| `supabase/functions/telegram-alerts/index.ts` | Nuevo — envío de alertas a Telegram |
+| `src/pages/Convenios.tsx` | Mejorar campo Drive URL con preview/link |
+| `src/pages/Acreditacion.tsx` | Links a Drive folders por criterio |
+| `src/components/dashboard/InfraFooter.tsx` | Agregar Telegram y Email al footer |
 
-## Notas Técnicas
-- Sin dependencias nuevas — Tailwind + Framer Motion existentes
-- Glass-morphism usa `backdrop-blur-md` — soporte en todos los navegadores modernos
-- Shimmer animation via CSS background-position — zero JS overhead
-- `systemHealth.ts` es client-side, consultable desde edge function para auto-traspaso
-- Estimado: ~5 créditos
+## Orden de ejecución sugerido
+1. **Email branded** — mayor impacto profesional inmediato
+2. **Telegram alerts** — alertas en tiempo real al celular
+3. **Sheets → Supabase** — elimina mock data
+4. **n8n MCP** — visibilidad de workflows
+5. **Drive links UI** — mejora UX de documentos
+
+## Notas
+- Telegram connector ya está disponible en el catálogo — solo hay que conectarlo
+- n8n MCP también disponible — da visibilidad directa de workflows
+- Email requiere configurar dominio idma.cl (DNS records)
+- Google Sheets se conecta via n8n (ya funciona), no requiere API key adicional en Lovable
+- Railway Pro se usa solo para Qdrant — no necesita cambios
 
