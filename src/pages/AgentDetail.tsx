@@ -65,6 +65,32 @@ export default function AgentDetail() {
     enabled: !!id,
   });
 
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['agent_tasks', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_tasks')
+        .select('*')
+        .eq('agent_id', id || '')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const toggleTask = useMutation({
+    mutationFn: async ({ taskId, current }: { taskId: string; current: string }) => {
+      const next = current === 'completada' ? 'pendiente' : 'completada';
+      const { error } = await supabase
+        .from('agent_tasks')
+        .update({ status: next, updated_at: new Date().toISOString() })
+        .eq('id', taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent_tasks', id] }),
+  });
+
   if (!agent) {
     return (
       <div className="text-center py-20 text-muted-foreground">
