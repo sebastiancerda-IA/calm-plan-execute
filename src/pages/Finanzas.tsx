@@ -151,10 +151,34 @@ function FinancialChat() {
             ))}
           </div>
         </div>
-        <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
-          {recordCount} registros financieros
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <Cpu size={10} className="text-muted-foreground" />
+                  <Select value={selectedModel} onValueChange={handleModelChange}>
+                    <SelectTrigger className="h-7 w-[130px] text-[10px] border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map(m => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          <span>{m.label}</span>
+                          <span className="text-muted-foreground ml-1">— {m.desc}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
+            {recordCount} registros financieros
+          </span>
+        </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
