@@ -22,8 +22,13 @@ export function StatusDot({ status, size = 8 }: StatusDotProps) {
     <span className="relative inline-flex">
       {isPulsing && (
         <span
-          className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-40"
-          style={{ backgroundColor: color }}
+          className="absolute inline-flex h-full w-full rounded-full opacity-40"
+          style={{
+            backgroundColor: color,
+            animation: status === 'procesando'
+              ? 'procesando-pulse 1.5s ease-in-out infinite'
+              : 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+          }}
         />
       )}
       <span

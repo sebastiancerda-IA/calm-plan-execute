@@ -1,9 +1,10 @@
+import { useState, useMemo } from 'react';
 import { mockAgents } from '@/data/mockAgents';
 import { mockEmails } from '@/data/mockEmails';
 import { mockAlerts } from '@/data/mockAlerts';
 import { ActivityEvent } from '@/types';
 
-const events: ActivityEvent[] = [
+const allEvents: ActivityEvent[] = [
   { id: '1', timestamp: mockAgents[0].lastRun!, agentCode: 'A1', agentColor: '#E8734A', action: 'Clasificó 8 emails VCM', result: 'Éxito' },
   { id: '2', timestamp: mockAgents[3].lastRun!, agentCode: 'C1', agentColor: '#10B981', action: 'Procesó 5 emails OTEC', result: 'Éxito' },
   { id: '3', timestamp: mockAlerts[0].timestamp, agentCode: 'A1', agentColor: '#EF4444', action: 'Alerta: GENERA sin respuesta 36h', result: 'Pendiente' },
@@ -16,6 +17,8 @@ const events: ActivityEvent[] = [
   { id: '10', timestamp: mockEmails[9].fecha, agentCode: 'A1', agentColor: '#E8734A', action: 'Visita Torres del Paine confirmada', result: 'Info' },
 ];
 
+const agentCodes = [...new Set(allEvents.map((e) => e.agentCode))];
+
 function timeAgo(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
   if (h < 1) return 'hace <1h';
@@ -24,14 +27,33 @@ function timeAgo(iso: string) {
 }
 
 export function ActivityFeed() {
+  const [filter, setFilter] = useState<string>('all');
+
+  const events = useMemo(
+    () => (filter === 'all' ? allEvents : allEvents.filter((e) => e.agentCode === filter)),
+    [filter]
+  );
+
   return (
-    <div className="rounded-md border border-[#1E293B] bg-[#111827] p-4 h-full">
-      <h3 className="text-xs text-[#6B7280] uppercase tracking-wider font-medium mb-3">
-        Actividad Reciente
-      </h3>
+    <div className="rounded-md border border-border bg-card p-4 h-full">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+          Actividad Reciente
+        </h3>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="bg-secondary border border-border rounded px-2 py-1 text-[10px] text-foreground font-mono"
+        >
+          <option value="all">Todos</option>
+          {agentCodes.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-0">
         {events.map((ev) => (
-          <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-[#1E293B] last:border-0">
+          <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
             <div className="mt-1.5 flex-shrink-0">
               <span
                 className="block w-2 h-2 rounded-full"
@@ -43,9 +65,9 @@ export function ActivityFeed() {
                 <span className="font-mono text-[10px] font-bold" style={{ color: ev.agentColor }}>
                   {ev.agentCode}
                 </span>
-                <span className="text-xs text-[#F1F5F9] truncate">{ev.action}</span>
+                <span className="text-xs text-foreground truncate">{ev.action}</span>
               </div>
-              <span className="text-[10px] text-[#6B7280]">{timeAgo(ev.timestamp)}</span>
+              <span className="text-[10px] text-muted-foreground">{timeAgo(ev.timestamp)}</span>
             </div>
           </div>
         ))}

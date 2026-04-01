@@ -20,6 +20,7 @@ export function GlobalMetrics() {
         trend="stable"
         color="#22C55E"
         sparkline={[2, 3, 3, 4, 4, 4, 4]}
+        href="/agents"
       />
       <MetricTile
         label="Emails procesados 24h"
@@ -27,6 +28,7 @@ export function GlobalMetrics() {
         trend="up"
         color="#E8734A"
         sparkline={[5, 8, 6, 10, 9, 11, 13]}
+        href="/agent/a1-vcm"
       />
       <MetricTile
         label="Alertas activas"
@@ -35,6 +37,7 @@ export function GlobalMetrics() {
         suffix={counts.critica > 0 ? `(${counts.critica} críticas)` : undefined}
         color="#EF4444"
         sparkline={[3, 4, 3, 5, 4, 5, 5]}
+        href="/alerts"
       />
       <MetricTile
         label="Base de conocimiento"
@@ -43,6 +46,7 @@ export function GlobalMetrics() {
         suffix={`${((ragStats.jinaTokensUsed / ragStats.jinaTokensLimit) * 100).toFixed(2)}% Jina`}
         color="#3B82F6"
         sparkline={[30, 35, 38, 42, 45, 48, 51]}
+        href="/rag"
       />
     </div>
   );
