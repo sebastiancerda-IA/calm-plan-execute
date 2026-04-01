@@ -20,24 +20,29 @@ export function TopBar() {
   const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const dateStr = now.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   const uptimeStr = uptime < 60 ? `${uptime}m` : `${Math.floor(uptime / 60)}h ${uptime % 60}m`;
-
   const roleLabel = role === 'director' ? 'DIRECTOR' : role === 'dg' ? 'DG' : 'STAFF';
 
   return (
-    <header className="h-12 flex items-center justify-between border-b border-border bg-sidebar px-4">
+    <header className="h-12 flex items-center justify-between bg-sidebar px-4 relative overflow-hidden">
+      {/* Bottom gradient border */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-idma-green via-idma-teal to-idma-blue opacity-60" />
+
       <div className="flex items-center gap-3">
         <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
         <div className="flex items-center gap-2">
-          <Leaf size={20} className="text-idma-green" />
+          <div className="relative">
+            <Leaf size={20} className="text-idma-green" />
+            <div className="absolute inset-0 blur-md bg-idma-green/20 rounded-full" />
+          </div>
           <span className="font-semibold text-foreground text-sm tracking-tight">La Orquesta IDMA</span>
         </div>
-        <span className="text-[10px] font-mono bg-idma-green/20 text-idma-green-light px-1.5 py-0.5 rounded">v4.2</span>
+        <span className="text-[10px] font-mono bg-idma-green/15 text-idma-green-light px-1.5 py-0.5 rounded border border-idma-green/20">v4.2</span>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <StatusDot status="operativo" size={6} />
-          <span className="text-xs text-idma-green font-medium">Sistema activo</span>
+          <span className="text-xs text-idma-green font-medium">Activo</span>
         </div>
         <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">
           up {uptimeStr}
