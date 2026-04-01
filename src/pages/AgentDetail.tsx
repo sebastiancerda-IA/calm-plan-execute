@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentsService, executionsService, emailLogsService } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
 import { StatusDot } from '@/components/shared/StatusDot';
 import { MetricTile } from '@/components/shared/MetricTile';
