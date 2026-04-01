@@ -350,6 +350,42 @@ export type Database = {
           },
         ]
       }
+      financial_records: {
+        Row: {
+          amount: number
+          category: string
+          concept: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          period: string
+          record_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          concept: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          period: string
+          record_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          concept?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          period?: string
+          record_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       institutional_metrics: {
         Row: {
           created_at: string | null
@@ -425,6 +461,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       rag_documents: {
         Row: {
           agent_id: string | null
@@ -493,15 +553,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "director" | "dg" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -628,6 +712,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["director", "dg", "staff"],
+    },
   },
 } as const
