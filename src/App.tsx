@@ -20,6 +20,7 @@ const CNAMatrix = lazy(() => import('./pages/CNAMatrix'));
 const Alerts = lazy(() => import('./pages/Alerts'));
 const RAGExplorer = lazy(() => import('./pages/RAGExplorer'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Acreditacion = lazy(() => import('./pages/Acreditacion'));
 const Login = lazy(() => import('./pages/Login'));
 const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
