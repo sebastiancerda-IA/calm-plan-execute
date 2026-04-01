@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentBadge } from '@/components/shared/AgentBadge';
 import { ChevronDown, ChevronRight, AlertTriangle, Download, FileText, Plus } from 'lucide-react';
+import { exportCNAMatrix } from '@/lib/exportUtils';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
