@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sparkline } from './Sparkline';
@@ -15,7 +16,7 @@ interface MetricTileProps {
   index?: number;
 }
 
-export function MetricTile({ label, value, trend, sparkline, color = 'hsl(var(--idma-blue))', suffix, href, index = 0 }: MetricTileProps) {
+function MetricTileInner({ label, value, trend, sparkline, color = 'hsl(var(--idma-blue))', suffix, href, index = 0 }: MetricTileProps) {
   const navigate = useNavigate();
   const numericValue = typeof value === 'number' ? value : null;
   const animatedValue = useCountUp(numericValue ?? 0, 600);
@@ -46,3 +47,5 @@ export function MetricTile({ label, value, trend, sparkline, color = 'hsl(var(--
     </motion.div>
   );
 }
+
+export const MetricTile = memo(MetricTileInner);

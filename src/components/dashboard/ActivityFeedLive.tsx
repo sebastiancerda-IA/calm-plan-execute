@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, AlertTriangle, Play } from 'lucide-react';
@@ -20,6 +20,38 @@ interface FeedEvent {
   result: string;
   type: 'execution' | 'alert' | 'rag_indexed';
 }
+
+function FeedItem({ ev }: { ev: FeedEvent }) {
+  const icon = ev.type === 'rag_indexed'
+    ? <Database size={10} className="text-blue-400" />
+    : ev.type === 'alert'
+    ? <AlertTriangle size={10} className="text-destructive" />
+    : <Play size={10} className="text-muted-foreground" />;
+
+  return (
+    <div className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+      <div className="mt-1.5 flex-shrink-0">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] font-bold" style={{ color: ev.agentColor }}>
+            {ev.agentCode}
+          </span>
+          <span className="text-xs text-foreground truncate">{ev.action}</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">{timeAgo(ev.timestamp)}</span>
+      </div>
+      <span className={`text-[9px] font-mono shrink-0 ${
+        ev.result === 'Error' || ev.result === 'Crítico' ? 'text-destructive'
+          : ev.result === 'Indexado' ? 'text-blue-400'
+          : 'text-muted-foreground'
+      }`}>
+        {ev.result}
+      </span>
+    </div>
+  );
+}
+
+const MemoFeedItem = memo(FeedItem);
 
 export function ActivityFeedLive() {
   const queryClient = useQueryClient();
@@ -82,10 +114,10 @@ export function ActivityFeedLive() {
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         .slice(0, 12);
     },
+    staleTime: 30000,
     refetchInterval: 60000,
   });
 
-  // Realtime for new RAG docs
   useEffect(() => {
     const channel = supabase
       .channel('feed_rag_realtime')
@@ -97,43 +129,13 @@ export function ActivityFeedLive() {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  const getIcon = (type: FeedEvent['type']) => {
-    switch (type) {
-      case 'rag_indexed': return <Database size={10} className="text-blue-400" />;
-      case 'alert': return <AlertTriangle size={10} className="text-destructive" />;
-      default: return <Play size={10} className="text-muted-foreground" />;
-    }
-  };
-
   return (
     <div className="rounded-md border border-border bg-card p-4 h-full">
       <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
         Actividad Reciente
       </h3>
       <div className="space-y-0">
-        {events.map((ev) => (
-          <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-            <div className="mt-1.5 flex-shrink-0 flex items-center gap-1">
-              {getIcon(ev.type)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-bold" style={{ color: ev.agentColor }}>
-                  {ev.agentCode}
-                </span>
-                <span className="text-xs text-foreground truncate">{ev.action}</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground">{timeAgo(ev.timestamp)}</span>
-            </div>
-            <span className={`text-[9px] font-mono shrink-0 ${
-              ev.result === 'Error' || ev.result === 'Crítico' ? 'text-destructive'
-                : ev.result === 'Indexado' ? 'text-blue-400'
-                : 'text-muted-foreground'
-            }`}>
-              {ev.result}
-            </span>
-          </div>
-        ))}
+        {events.map((ev) => <MemoFeedItem key={ev.id} ev={ev} />)}
         {events.length === 0 && (
           <div className="text-xs text-muted-foreground text-center py-4">Sin actividad reciente</div>
         )}

@@ -1,15 +1,21 @@
+import { lazy, Suspense, memo } from 'react';
 import { GlobalMetrics } from '@/components/dashboard/GlobalMetrics';
 import { InstitutionalMetrics } from '@/components/dashboard/InstitutionalMetrics';
-import { AgentMap } from '@/components/dashboard/AgentMap';
-import { AccreditationGuide } from '@/components/dashboard/AccreditationGuide';
-import { ActivityFeedLive } from '@/components/dashboard/ActivityFeedLive';
-import { ActionCenter } from '@/components/dashboard/ActionCenter';
-import { InfraFooter } from '@/components/dashboard/InfraFooter';
-import { PulseWidget } from '@/components/dashboard/PulseWidget';
-import { DataChecklist } from '@/components/dashboard/DataChecklist';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 
-export default function Dashboard() {
+const AgentMap = lazy(() => import('@/components/dashboard/AgentMap').then(m => ({ default: m.AgentMap })));
+const ActivityFeedLive = lazy(() => import('@/components/dashboard/ActivityFeedLive').then(m => ({ default: m.ActivityFeedLive })));
+const AccreditationGuide = lazy(() => import('@/components/dashboard/AccreditationGuide').then(m => ({ default: m.AccreditationGuide })));
+const ActionCenter = lazy(() => import('@/components/dashboard/ActionCenter').then(m => ({ default: m.ActionCenter })));
+const InfraFooter = lazy(() => import('@/components/dashboard/InfraFooter').then(m => ({ default: m.InfraFooter })));
+const PulseWidget = lazy(() => import('@/components/dashboard/PulseWidget').then(m => ({ default: m.PulseWidget })));
+const DataChecklist = lazy(() => import('@/components/dashboard/DataChecklist').then(m => ({ default: m.DataChecklist })));
+
+function WidgetFallback() {
+  return <div className="rounded-lg border border-border bg-card animate-pulse h-24" />;
+}
+
+function DashboardInner() {
   const { prefs } = useUserPreferences();
   const w = prefs.visibleWidgets;
 
@@ -17,17 +23,47 @@ export default function Dashboard() {
     <div className="space-y-4">
       {w.globalMetrics && <GlobalMetrics />}
       {w.institutionalMetrics && <InstitutionalMetrics />}
-      {w.agentMap && <AgentMap />}
-      {w.pulse && <PulseWidget />}
+      {w.agentMap && (
+        <Suspense fallback={<WidgetFallback />}>
+          <AgentMap />
+        </Suspense>
+      )}
+      {w.pulse && (
+        <Suspense fallback={<WidgetFallback />}>
+          <PulseWidget />
+        </Suspense>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {w.activityFeed && <ActivityFeedLive />}
-        {w.accreditationGuide && <AccreditationGuide />}
+        {w.activityFeed && (
+          <Suspense fallback={<WidgetFallback />}>
+            <ActivityFeedLive />
+          </Suspense>
+        )}
+        {w.accreditationGuide && (
+          <Suspense fallback={<WidgetFallback />}>
+            <AccreditationGuide />
+          </Suspense>
+        )}
         <div className="space-y-4">
-          {w.actionCenter && <ActionCenter />}
-          {w.dataChecklist && <DataChecklist />}
+          {w.actionCenter && (
+            <Suspense fallback={<WidgetFallback />}>
+              <ActionCenter />
+            </Suspense>
+          )}
+          {w.dataChecklist && (
+            <Suspense fallback={<WidgetFallback />}>
+              <DataChecklist />
+            </Suspense>
+          )}
         </div>
       </div>
-      {w.infraFooter && <InfraFooter />}
+      {w.infraFooter && (
+        <Suspense fallback={<WidgetFallback />}>
+          <InfraFooter />
+        </Suspense>
+      )}
     </div>
   );
 }
+
+export default memo(DashboardInner);

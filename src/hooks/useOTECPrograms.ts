@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 
 export function useOTECPrograms() {
   const { data = [], isLoading } = useQuery({
@@ -12,22 +13,20 @@ export function useOTECPrograms() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 120000,
     refetchInterval: 300000,
   });
 
-  const activos = data.filter((p: any) => p.status === 'activo');
-  const cursos = activos.filter((p: any) => p.type === 'curso').length;
-  const diplomados = activos.filter((p: any) => p.type === 'diplomado').length;
-  const totalStudents = activos.reduce((sum: number, p: any) => sum + (p.students_enrolled || 0), 0);
-  const totalRevenue = activos.reduce((sum: number, p: any) => sum + Number(p.revenue || 0), 0);
+  const computed = useMemo(() => {
+    const activos = data.filter((p: any) => p.status === 'activo');
+    return {
+      activos,
+      cursos: activos.filter((p: any) => p.type === 'curso').length,
+      diplomados: activos.filter((p: any) => p.type === 'diplomado').length,
+      totalStudents: activos.reduce((sum: number, p: any) => sum + (p.students_enrolled || 0), 0),
+      totalRevenue: activos.reduce((sum: number, p: any) => sum + Number(p.revenue || 0), 0),
+    };
+  }, [data]);
 
-  return {
-    programs: data,
-    activos,
-    cursos,
-    diplomados,
-    totalStudents,
-    totalRevenue,
-    isLoading,
-  };
+  return { programs: data, ...computed, isLoading };
 }
