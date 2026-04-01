@@ -4,8 +4,10 @@ import { MetricTile } from '@/components/shared/MetricTile';
 import { useInstitutionalMetrics } from '@/hooks/useInstitutionalMetrics';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles, Cpu } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
