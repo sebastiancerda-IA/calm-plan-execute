@@ -8,7 +8,8 @@ import { MetricTile } from '@/components/shared/MetricTile';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
 import { AgentBadge } from '@/components/shared/AgentBadge';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Clock, Filter } from 'lucide-react';
+import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function timeAgo(iso?: string) {
