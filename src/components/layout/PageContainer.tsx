@@ -10,7 +10,7 @@ interface PageContainerProps {
 export function PageContainer({ children }: PageContainerProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#0A0F1C]">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />

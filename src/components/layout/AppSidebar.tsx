@@ -21,7 +21,7 @@ import {
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Agentes', url: '/agent/a1-vcm', icon: Users },
+  { title: 'Agentes', url: '/agents', icon: Users },
   { title: 'CNA Matrix', url: '/cna', icon: Shield },
   { title: 'Alertas', url: '/alerts', icon: AlertTriangle },
   { title: 'RAG Explorer', url: '/rag', icon: Database },
@@ -39,8 +39,8 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-[#1E293B]">
-      <SidebarContent className="bg-[#0A0F1C] pt-2">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <SidebarContent className="bg-sidebar pt-2">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -52,8 +52,8 @@ export function AppSidebar() {
                       end={item.url === '/'}
                       className={`flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors ${
                         isActive(item.url)
-                          ? 'bg-[#1E293B] text-[#F1F5F9] font-medium'
-                          : 'text-[#6B7280] hover:text-[#F1F5F9] hover:bg-[#111827]'
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                          : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
                       }`}
                       activeClassName=""
                     >
