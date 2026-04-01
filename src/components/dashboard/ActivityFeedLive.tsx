@@ -53,7 +53,6 @@ function FeedItem({ ev }: { ev: FeedEvent }) {
 const MemoFeedItem = memo(FeedItem);
 
 export function ActivityFeedLive() {
-  const queryClient = useQueryClient();
 
   const { data: events = [] } = useQuery({
     queryKey: ['activity_feed'],
