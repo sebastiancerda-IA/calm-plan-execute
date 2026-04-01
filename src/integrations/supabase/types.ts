@@ -247,6 +247,78 @@ export type Database = {
         }
         Relationships: []
       }
+      convenios: {
+        Row: {
+          archivo_drive_url: string | null
+          archivo_nombre: string | null
+          beneficio_arancel_pct: number | null
+          beneficio_creditos: number | null
+          carreras_habilitadas: string[] | null
+          contraparte: Database["public"]["Enums"]["convenio_contraparte"]
+          created_at: string | null
+          criterios_cna: string[] | null
+          cupos_anuales: number | null
+          descripcion: string | null
+          email_contacto: string | null
+          estado: Database["public"]["Enums"]["convenio_estado"]
+          fecha_inicio: string | null
+          fecha_termino: string | null
+          id: string
+          nombre_institucion: string
+          observaciones: string | null
+          para_carrera: string | null
+          persona_contacto: string | null
+          tipo: Database["public"]["Enums"]["convenio_tipo"]
+          updated_at: string | null
+        }
+        Insert: {
+          archivo_drive_url?: string | null
+          archivo_nombre?: string | null
+          beneficio_arancel_pct?: number | null
+          beneficio_creditos?: number | null
+          carreras_habilitadas?: string[] | null
+          contraparte: Database["public"]["Enums"]["convenio_contraparte"]
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          cupos_anuales?: number | null
+          descripcion?: string | null
+          email_contacto?: string | null
+          estado?: Database["public"]["Enums"]["convenio_estado"]
+          fecha_inicio?: string | null
+          fecha_termino?: string | null
+          id?: string
+          nombre_institucion: string
+          observaciones?: string | null
+          para_carrera?: string | null
+          persona_contacto?: string | null
+          tipo: Database["public"]["Enums"]["convenio_tipo"]
+          updated_at?: string | null
+        }
+        Update: {
+          archivo_drive_url?: string | null
+          archivo_nombre?: string | null
+          beneficio_arancel_pct?: number | null
+          beneficio_creditos?: number | null
+          carreras_habilitadas?: string[] | null
+          contraparte?: Database["public"]["Enums"]["convenio_contraparte"]
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          cupos_anuales?: number | null
+          descripcion?: string | null
+          email_contacto?: string | null
+          estado?: Database["public"]["Enums"]["convenio_estado"]
+          fecha_inicio?: string | null
+          fecha_termino?: string | null
+          id?: string
+          nombre_institucion?: string
+          observaciones?: string | null
+          para_carrera?: string | null
+          persona_contacto?: string | null
+          tipo?: Database["public"]["Enums"]["convenio_tipo"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           accion_requerida: boolean | null
@@ -586,6 +658,31 @@ export type Database = {
     }
     Enums: {
       app_role: "director" | "dg" | "staff"
+      convenio_contraparte:
+        | "municipalidad"
+        | "empresa_privada"
+        | "ies_universidad"
+        | "ies_cft_ip"
+        | "sociedad_civil_ong"
+        | "organismo_publico"
+        | "fundacion"
+        | "internacional"
+        | "otro"
+      convenio_estado:
+        | "activo"
+        | "expirado"
+        | "pendiente_firma"
+        | "en_negociacion"
+        | "suspendido"
+      convenio_tipo:
+        | "practica_profesional"
+        | "prosecucion_estudios"
+        | "cooperacion_tecnica"
+        | "descuento_arancel"
+        | "colaboracion_institucional"
+        | "otec_empresa"
+        | "erasmus"
+        | "investigacion"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -714,6 +811,34 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["director", "dg", "staff"],
+      convenio_contraparte: [
+        "municipalidad",
+        "empresa_privada",
+        "ies_universidad",
+        "ies_cft_ip",
+        "sociedad_civil_ong",
+        "organismo_publico",
+        "fundacion",
+        "internacional",
+        "otro",
+      ],
+      convenio_estado: [
+        "activo",
+        "expirado",
+        "pendiente_firma",
+        "en_negociacion",
+        "suspendido",
+      ],
+      convenio_tipo: [
+        "practica_profesional",
+        "prosecucion_estudios",
+        "cooperacion_tecnica",
+        "descuento_arancel",
+        "colaboracion_institucional",
+        "otec_empresa",
+        "erasmus",
+        "investigacion",
+      ],
     },
   },
 } as const

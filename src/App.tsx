@@ -22,6 +22,7 @@ const RAGExplorer = lazy(() => import('./pages/RAGExplorer'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Acreditacion = lazy(() => import('./pages/Acreditacion'));
 const Finanzas = lazy(() => import('./pages/Finanzas'));
+const Convenios = lazy(() => import('./pages/Convenios'));
 const Login = lazy(() => import('./pages/Login'));
 const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
@@ -89,6 +90,7 @@ function AuthenticatedApp() {
               <Route path="/rag" element={<RAGExplorer />} />
               <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/finanzas" element={<Finanzas />} />
+              <Route path="/convenios" element={<Convenios />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </PageTransition>
