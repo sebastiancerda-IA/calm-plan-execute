@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SkeletonLoader } from '@/components/shared/SkeletonLoader';
+import { CommandPalette } from '@/components/shared/CommandPalette';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/components/shared/PageTransition';
 import Dashboard from './pages/Dashboard';
@@ -46,6 +47,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <CommandPalette />
         <PageContainer>
           <AnimatedRoutes />
         </PageContainer>
