@@ -311,6 +311,17 @@ export default function Finanzas() {
         </TabsList>
 
         <TabsContent value="dashboard">
+          {/* Export button */}
+          {records.length > 0 && (
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => exportFinancialRecords(records)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
+              >
+                <Download size={12} /> Exportar CSV
+              </button>
+            </div>
+          )}
           {/* KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <MetricTile
