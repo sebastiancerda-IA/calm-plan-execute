@@ -6,10 +6,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SkeletonLoader } from '@/components/shared/SkeletonLoader';
-import { CommandPalette } from '@/components/shared/CommandPalette';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -22,13 +21,26 @@ const Alerts = lazy(() => import('./pages/Alerts'));
 const RAGExplorer = lazy(() => import('./pages/RAGExplorer'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Login = lazy(() => import('./pages/Login'));
+const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60000,
+      gcTime: 300000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
 
   useEffect(() => {
+    if (!session) return;
+
     const agentsChannel = supabase
       .channel('agents-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, () => {
@@ -51,30 +63,34 @@ function RealtimeProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(agentsChannel);
       supabase.removeChannel(alertsChannel);
     };
-  }, [qc]);
+  }, [qc, session]);
 
   return <>{children}</>;
 }
 
-function AnimatedRoutes() {
+function AuthenticatedApp() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<SkeletonLoader />} key={location.pathname}>
-        <PageTransition>
-          <Routes location={location}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<AuthGuard><Dashboard /></AuthGuard>} />
-            <Route path="/agents" element={<AuthGuard><AgentsList /></AuthGuard>} />
-            <Route path="/agent/:id" element={<AuthGuard><AgentDetail /></AuthGuard>} />
-            <Route path="/cna" element={<AuthGuard><CNAMatrix /></AuthGuard>} />
-            <Route path="/alerts" element={<AuthGuard><Alerts /></AuthGuard>} />
-            <Route path="/rag" element={<AuthGuard><RAGExplorer /></AuthGuard>} />
-            <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-          </Routes>
-        </PageTransition>
+    <PageContainer>
+      <Suspense fallback={null}>
+        <CommandPalette />
       </Suspense>
-    </AnimatePresence>
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<SkeletonLoader />} key={location.pathname}>
+          <PageTransition>
+            <Routes location={location}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/agents" element={<AgentsList />} />
+              <Route path="/agent/:id" element={<AgentDetail />} />
+              <Route path="/cna" element={<CNAMatrix />} />
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/rag" element={<RAGExplorer />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </PageTransition>
+        </Suspense>
+      </AnimatePresence>
+    </PageContainer>
   );
 }
 
@@ -86,17 +102,12 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <RealtimeProvider>
-            <CommandPalette />
             <Routes>
               <Route path="/login" element={
                 <Suspense fallback={<SkeletonLoader />}><Login /></Suspense>
               } />
               <Route path="/*" element={
-                <AuthGuard>
-                  <PageContainer>
-                    <AnimatedRoutes />
-                  </PageContainer>
-                </AuthGuard>
+                <AuthGuard><AuthenticatedApp /></AuthGuard>
               } />
             </Routes>
           </RealtimeProvider>
