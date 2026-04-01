@@ -114,6 +114,22 @@
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  .text-gradient-idma {
+    background: linear-gradient(135deg, hsl(var(--idma-green)), hsl(var(--idma-teal)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .border-gradient-idma {
+    border-image: linear-gradient(135deg, hsl(var(--idma-green) / 0.3), hsl(var(--idma-teal) / 0.3)) 1;
+  }
+
+  .density-spacing {
+    gap: calc(1rem * var(--density-factor, 1));
+    padding: calc(1rem * var(--density-factor, 1));
+  }
 }
 
 @keyframes procesando-pulse {

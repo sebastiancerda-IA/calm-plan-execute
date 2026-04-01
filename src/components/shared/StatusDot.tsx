@@ -1,12 +1,12 @@
 import { AgentStatus } from '@/types';
 
 const statusColors: Record<AgentStatus, string> = {
-  operativo: '#22C55E',
+  operativo: 'hsl(var(--idma-green))',
   listo: '#EAB308',
   disenado: '#6B7280',
   futuro: '#4B5563',
-  error: '#EF4444',
-  procesando: '#3B82F6',
+  error: 'hsl(var(--destructive))',
+  procesando: 'hsl(var(--idma-blue))',
 };
 
 interface StatusDotProps {
@@ -22,18 +22,24 @@ export function StatusDot({ status, size = 8 }: StatusDotProps) {
     <span className="relative inline-flex">
       {isPulsing && (
         <span
-          className="absolute inline-flex h-full w-full rounded-full opacity-40"
+          className="absolute inline-flex h-full w-full rounded-full"
           style={{
             backgroundColor: color,
             animation: status === 'procesando'
               ? 'procesando-pulse 1.5s ease-in-out infinite'
-              : 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+              : 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+            opacity: 0.35,
           }}
         />
       )}
       <span
         className="relative inline-flex rounded-full"
-        style={{ width: size, height: size, backgroundColor: color }}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: color,
+          boxShadow: isPulsing ? `0 0 ${size}px ${color}` : 'none',
+        }}
       />
     </span>
   );

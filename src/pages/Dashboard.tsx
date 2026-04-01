@@ -7,23 +7,27 @@ import { ActionCenter } from '@/components/dashboard/ActionCenter';
 import { InfraFooter } from '@/components/dashboard/InfraFooter';
 import { PulseWidget } from '@/components/dashboard/PulseWidget';
 import { DataChecklist } from '@/components/dashboard/DataChecklist';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 export default function Dashboard() {
+  const { prefs } = useUserPreferences();
+  const w = prefs.visibleWidgets;
+
   return (
     <div className="space-y-4">
-      <GlobalMetrics />
-      <InstitutionalMetrics />
-      <AgentMap />
-      <PulseWidget />
+      {w.globalMetrics && <GlobalMetrics />}
+      {w.institutionalMetrics && <InstitutionalMetrics />}
+      {w.agentMap && <AgentMap />}
+      {w.pulse && <PulseWidget />}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ActivityFeedLive />
-        <AccreditationGuide />
+        {w.activityFeed && <ActivityFeedLive />}
+        {w.accreditationGuide && <AccreditationGuide />}
         <div className="space-y-4">
-          <ActionCenter />
-          <DataChecklist />
+          {w.actionCenter && <ActionCenter />}
+          {w.dataChecklist && <DataChecklist />}
         </div>
       </div>
-      <InfraFooter />
+      {w.infraFooter && <InfraFooter />}
     </div>
   );
 }

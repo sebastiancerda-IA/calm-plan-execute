@@ -1,8 +1,9 @@
 import { StatusDot } from '@/components/shared/StatusDot';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useTheme } from '@/hooks/useTheme';
+import { useUserPreferences, Density } from '@/hooks/useUserPreferences';
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Eye, EyeOff } from 'lucide-react';
 
 const infraServices = [
   { name: 'n8n Cloud', status: 'activo' as const, plan: 'Starter', cost: '$0', usage: '4 workflows activos', url: 'sebastiancerda-ia.app.n8n.cloud' },
@@ -31,6 +32,24 @@ const API_EXAMPLES = [
   { label: 'Tareas por agente', payload: '{ "action": "get_tasks", "agent_id": "a1-vcm" }' },
 ];
 
+const WIDGET_LABELS: Record<string, string> = {
+  globalMetrics: 'Métricas Globales',
+  institutionalMetrics: 'Métricas Institucionales',
+  agentMap: 'Mapa de Agentes',
+  pulse: 'Pulse Widget',
+  activityFeed: 'Activity Feed',
+  accreditationGuide: 'Guía Acreditación',
+  actionCenter: 'Centro de Acciones',
+  dataChecklist: 'Data Checklist',
+  infraFooter: 'Infraestructura Footer',
+};
+
+const DENSITY_OPTIONS: { value: Density; label: string; desc: string }[] = [
+  { value: 'compact', label: 'Compacto', desc: 'Máxima densidad de datos' },
+  { value: 'normal', label: 'Normal', desc: 'Balance estándar' },
+  { value: 'expanded', label: 'Expandido', desc: 'Más espacio visual' },
+];
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -45,22 +64,115 @@ function CopyButton({ text }: { text: string }) {
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { prefs, setPrefs, setWidgetVisible } = useUserPreferences();
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-api`;
 
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'Settings' }]} />
-      <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+      <h1 className="text-xl font-semibold text-gradient-idma">Settings</h1>
 
-      {/* Orchestrator API - Claude Code Integration */}
-      <div className="rounded-md border border-primary/30 bg-card p-4">
-        <h3 className="text-xs text-primary uppercase tracking-wider font-medium mb-3">
+      {/* Personalización */}
+      <div className="rounded-lg border border-idma-green/20 bg-card p-4">
+        <h3 className="text-xs text-idma-green uppercase tracking-wider font-medium mb-4">
+          Personalización
+        </h3>
+
+        {/* Density */}
+        <div className="mb-4">
+          <span className="text-[10px] text-muted-foreground block mb-2">Densidad de datos</span>
+          <div className="flex gap-2">
+            {DENSITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setPrefs({ density: opt.value })}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  prefs.density === opt.value
+                    ? 'bg-idma-green/20 text-idma-green-light border border-idma-green/30'
+                    : 'bg-secondary text-muted-foreground border border-transparent hover:border-border'
+                }`}
+              >
+                <div>{opt.label}</div>
+                <div className="text-[9px] mt-0.5 opacity-70">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Animations toggle */}
+        <div className="flex items-center justify-between mb-4 p-2 rounded bg-secondary/50">
+          <span className="text-xs text-foreground">Animaciones</span>
+          <button
+            onClick={() => setPrefs({ animationsEnabled: !prefs.animationsEnabled })}
+            className={`w-10 h-5 rounded-full transition-colors relative ${
+              prefs.animationsEnabled ? 'bg-idma-green' : 'bg-muted'
+            }`}
+          >
+            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-foreground transition-transform ${
+              prefs.animationsEnabled ? 'left-5' : 'left-0.5'
+            }`} />
+          </button>
+        </div>
+
+        {/* Widget visibility */}
+        <div>
+          <span className="text-[10px] text-muted-foreground block mb-2">Widgets del Dashboard</span>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {Object.entries(WIDGET_LABELS).map(([key, label]) => {
+              const visible = prefs.visibleWidgets[key as keyof typeof prefs.visibleWidgets];
+              return (
+                <button
+                  key={key}
+                  onClick={() => setWidgetVisible(key as any, !visible)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded text-xs transition-all ${
+                    visible
+                      ? 'bg-secondary text-foreground'
+                      : 'bg-secondary/30 text-muted-foreground'
+                  }`}
+                >
+                  {visible ? <Eye size={12} className="text-idma-green" /> : <EyeOff size={12} />}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Theme toggle */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
+          Tema
+        </h3>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTheme('dark')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              theme === 'dark' ? 'bg-idma-green/20 text-idma-green-light border border-idma-green/30' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            Oscuro
+          </button>
+          <button
+            onClick={() => setTheme('light')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              theme === 'light' ? 'bg-idma-green/20 text-idma-green-light border border-idma-green/30' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            Claro
+          </button>
+        </div>
+      </div>
+
+      {/* Orchestrator API */}
+      <div className="rounded-lg border border-idma-blue/20 bg-card p-4">
+        <h3 className="text-xs text-idma-blue uppercase tracking-wider font-medium mb-3">
           API Bridge — Claude Code
         </h3>
         <div className="space-y-3">
           <div>
             <span className="text-[10px] text-muted-foreground block mb-1">Endpoint URL</span>
-            <div className="flex items-center gap-2 bg-secondary rounded px-3 py-2">
+            <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
               <code className="text-xs text-foreground font-mono flex-1 truncate">{apiUrl}</code>
               <CopyButton text={apiUrl} />
             </div>
@@ -75,7 +187,7 @@ export default function Settings() {
             <span className="text-[10px] text-muted-foreground block mb-2">Payloads de ejemplo</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {API_EXAMPLES.map((ex) => (
-                <div key={ex.label} className="bg-secondary rounded p-2">
+                <div key={ex.label} className="bg-secondary rounded-lg p-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[9px] text-muted-foreground font-medium">{ex.label}</span>
                     <CopyButton text={ex.payload} />
@@ -89,13 +201,13 @@ export default function Settings() {
       </div>
 
       {/* Infrastructure */}
-      <div className="rounded-md border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
           Infraestructura
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {infraServices.map((s) => (
-            <div key={s.name} className="flex items-center justify-between p-3 rounded bg-background border border-border">
+            <div key={s.name} className="flex items-center justify-between p-3 rounded-lg bg-background border border-border">
               <div className="flex items-center gap-3">
                 <StatusDot status={s.status === 'activo' ? 'operativo' : 'error'} />
                 <div>
@@ -110,7 +222,7 @@ export default function Settings() {
       </div>
 
       {/* Credentials */}
-      <div className="rounded-md border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
           Credenciales
         </h3>
@@ -129,7 +241,7 @@ export default function Settings() {
                 <tr key={c.name} className="border-b border-border">
                   <td className="py-2 px-2 text-foreground font-mono">{c.name}</td>
                   <td className="py-2 px-2 text-muted-foreground">{c.type}</td>
-                  <td className="py-2 px-2"><span className="text-green-500">{c.status}</span></td>
+                  <td className="py-2 px-2"><span className="text-idma-green">{c.status}</span></td>
                   <td className="py-2 px-2 text-muted-foreground">{c.lastUsed}</td>
                 </tr>
               ))}
@@ -139,7 +251,7 @@ export default function Settings() {
       </div>
 
       {/* Costs */}
-      <div className="rounded-md border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
           Costos
         </h3>
@@ -158,7 +270,7 @@ export default function Settings() {
                 <tr key={s.name} className="border-b border-border">
                   <td className="py-2 px-2 text-foreground">{s.name}</td>
                   <td className="py-2 px-2 text-muted-foreground">{s.plan}</td>
-                  <td className="py-2 px-2 text-green-500 font-mono">{s.cost}</td>
+                  <td className="py-2 px-2 text-idma-green font-mono">{s.cost}</td>
                   <td className="py-2 px-2 text-muted-foreground">{s.usage}</td>
                 </tr>
               ))}
@@ -167,32 +279,7 @@ export default function Settings() {
         </div>
         <div className="mt-3 text-right">
           <span className="text-xs text-muted-foreground">Total mensual: </span>
-          <span className="font-mono font-bold text-green-500">$0</span>
-        </div>
-      </div>
-
-      {/* Theme toggle */}
-      <div className="rounded-md border border-border bg-card p-4">
-        <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
-          Tema
-        </h3>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setTheme('dark')}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              theme === 'dark' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            Oscuro
-          </button>
-          <button
-            onClick={() => setTheme('light')}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              theme === 'light' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            Claro
-          </button>
+          <span className="font-mono font-bold text-idma-green">$0</span>
         </div>
       </div>
     </div>
