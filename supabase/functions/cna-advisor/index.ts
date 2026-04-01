@@ -89,7 +89,7 @@ Sé específico, concreto y orientado a la acción. Máximo 500 palabras.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
