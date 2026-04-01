@@ -1,11 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
+import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { AgentBadge } from '@/components/shared/AgentBadge';
-import { ChevronDown, ChevronRight, AlertTriangle, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, Download, FileText, Plus } from 'lucide-react';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
 const levelColors: Record<string, { bg: string; text: string }> = {
   N1: { bg: '#991B1B', text: '#FCA5A5' },
@@ -37,9 +41,87 @@ function exportCSV(dimensions: any[]) {
   URL.revokeObjectURL(url);
 }
 
+// ─── Evidence Docs per Criterion ─────────────────────────
+function CriterionEvidenceDocs({ criterionId, isDirector }: { criterionId: string; isDirector: boolean }) {
+  const { documents } = useSupabaseRAG();
+  const [showModal, setShowModal] = useState(false);
+  const [driveUrl, setDriveUrl] = useState('');
+
+  const relatedDocs = documents.filter((d: any) =>
+    (d.criterios_cna || []).includes(criterionId)
+  );
+
+  const handleAddEvidence = async () => {
+    if (!driveUrl.trim()) return;
+    try {
+      const title = driveUrl.split('/').pop() || `Evidencia ${criterionId}`;
+      await supabase.from('acreditation_documents').insert({
+        title,
+        document_type: 'evidencia',
+        criterio_cna: criterionId,
+        file_path: driveUrl,
+        processed: false,
+      });
+      toast.success('Evidencia registrada');
+      setShowModal(false);
+      setDriveUrl('');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/50">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] text-muted-foreground uppercase">Documentos de evidencia</span>
+        {isDirector && (
+          <button
+            onClick={() => setShowModal(!showModal)}
+            className="text-[9px] flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+          >
+            <Plus size={10} /> Subir evidencia
+          </button>
+        )}
+      </div>
+
+      {relatedDocs.length > 0 ? (
+        <ul className="space-y-1">
+          {relatedDocs.map((doc: any) => (
+            <li key={doc.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <FileText size={10} className="text-primary/60 shrink-0" />
+              <span className="truncate">{doc.titulo}</span>
+              <span className="text-[9px] font-mono bg-secondary px-1 rounded">{doc.fuente}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[10px] text-muted-foreground/60 italic">Sin documentos indexados</p>
+      )}
+
+      {showModal && (
+        <div className="mt-2 flex gap-2">
+          <input
+            value={driveUrl}
+            onChange={(e) => setDriveUrl(e.target.value)}
+            placeholder="URL de Google Drive..."
+            className="flex-1 bg-secondary border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={handleAddEvidence}
+            className="bg-primary text-primary-foreground rounded px-2 py-1 text-xs"
+          >
+            Guardar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CNAMatrix() {
   const { dimensions, overall } = useSupabaseCNA();
   const { agents } = useSupabaseAgents();
+  const { isDirectorOrDG } = useAuth();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
 
@@ -107,7 +189,7 @@ export default function CNAMatrix() {
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-semibold text-foreground">{dim.name}</h2>
               {(dim as any).obligatoria && (
-                <span className="text-[10px] font-bold bg-[#7F1D1D] text-[#EF4444] px-2 py-0.5 rounded">
+                <span className="text-[10px] font-bold bg-destructive/20 text-destructive px-2 py-0.5 rounded">
                   OBLIGATORIA
                 </span>
               )}
@@ -144,7 +226,7 @@ export default function CNAMatrix() {
                       {isExpanded ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
                       <span className="font-mono text-xs font-bold text-foreground">{c.id}</span>
                       <span className="text-sm text-foreground">{c.name}</span>
-                      {hasBreach && <AlertTriangle size={12} className="text-[#EF4444]" />}
+                      {hasBreach && <AlertTriangle size={12} className="text-destructive" />}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: levelColors[c.currentLevel]?.bg, color: levelColors[c.currentLevel]?.text }}>{c.currentLevel}</span>
@@ -160,9 +242,9 @@ export default function CNAMatrix() {
                       {c.gap && (
                         <div>
                           <span className="text-[10px] text-muted-foreground uppercase">Brecha</span>
-                          <p className="text-sm text-[#FCA5A5] mt-1">{c.gap}</p>
+                          <p className="text-sm text-destructive/80 mt-1">{c.gap}</p>
                           {hasBreach && (
-                            <span className="inline-block mt-1 text-[10px] font-bold bg-[#7F1D1D] text-[#EF4444] px-2 py-0.5 rounded">
+                            <span className="inline-block mt-1 text-[10px] font-bold bg-destructive/20 text-destructive px-2 py-0.5 rounded">
                               BRECHA CRÍTICA
                             </span>
                           )}
@@ -182,10 +264,13 @@ export default function CNAMatrix() {
                         </div>
                       )}
                       {!c.gap && (c.actions || []).length === 0 && (
-                        <p className="text-xs text-[#22C55E]">
+                        <p className="text-xs text-green-400">
                           {c.currentLevel === 'N3' ? 'Fortaleza institucional' : 'En meta — sin acciones pendientes'}
                         </p>
                       )}
+
+                      {/* Evidence documents from RAG */}
+                      <CriterionEvidenceDocs criterionId={c.id} isDirector={isDirectorOrDG} />
                     </div>
                   )}
                 </div>
