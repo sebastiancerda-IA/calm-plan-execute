@@ -13,6 +13,13 @@ import { toast } from 'sonner';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
+const AI_MODELS = [
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
+  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
+  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
+];
+
 const SUGGESTIONS = [
   '¿Cuál es nuestra estructura de costos actual?',
   'Proyección de flujo de caja a 6 meses',
