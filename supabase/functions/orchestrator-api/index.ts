@@ -204,12 +204,18 @@ serve(async (req) => {
         break;
       }
 
+      case "get_convenios": {
+        const { data } = await supabase.from("convenios").select("*").order("created_at", { ascending: false });
+        result = { convenios: data };
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({
           error: `Unknown action: ${action}`,
           available_actions: [
             "get_status", "get_agents", "get_criteria", "get_alerts",
-            "get_documents", "get_metrics", "get_tasks",
+            "get_documents", "get_metrics", "get_tasks", "get_convenios",
             "update_agent", "create_alert", "add_execution", "add_rag_doc", "update_task",
             "create_financial_record", "bulk_financial_records",
           ],
