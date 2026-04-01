@@ -34,6 +34,7 @@ function FinancialChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'analista' | 'auditor'>('analista');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('fin_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: recordCount = 0 } = useQuery({
