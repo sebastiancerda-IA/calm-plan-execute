@@ -1,26 +1,14 @@
 import {
-  LayoutDashboard,
-  Users,
-  Shield,
-  AlertTriangle,
-  Database,
-  Settings,
-  GraduationCap,
-  DollarSign,
-  Handshake,
+  LayoutDashboard, Users, Shield, AlertTriangle, Database, Settings,
+  GraduationCap, DollarSign, Handshake,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRAGCount } from '@/hooks/useRAGCount';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -31,7 +19,7 @@ const navItems = [
   { title: 'Finanzas', url: '/finanzas', icon: DollarSign, restricted: true },
   { title: 'Convenios', url: '/convenios', icon: Handshake, restricted: false },
   { title: 'Alertas', url: '/alerts', icon: AlertTriangle, restricted: false },
-  { title: 'RAG Explorer', url: '/rag', icon: Database, restricted: false },
+  { title: 'RAG Explorer', url: '/rag', icon: Database, restricted: false, showBadge: true },
   { title: 'Settings', url: '/settings', icon: Settings, restricted: false },
 ];
 
@@ -40,6 +28,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { isDirectorOrDG } = useAuth();
+  const ragCount = useRAGCount();
 
   const isActive = (url: string) => {
     if (url === '/') return location.pathname === '/';
@@ -68,7 +57,16 @@ export function AppSidebar() {
                       activeClassName=""
                     >
                       <item.icon size={18} />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && (
+                        <span className="flex items-center gap-2">
+                          {item.title}
+                          {item.showBadge && ragCount > 0 && (
+                            <span className="min-w-[18px] h-[18px] rounded-full bg-primary/20 text-primary text-[9px] font-bold flex items-center justify-center px-1">
+                              {ragCount}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
