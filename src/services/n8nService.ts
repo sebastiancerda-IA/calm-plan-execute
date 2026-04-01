@@ -1,30 +1,41 @@
 import { Agent } from '@/types';
-import { mockAgents } from '@/data/mockAgents';
+import { supabase } from '@/integrations/supabase/client';
 
-// TODO: Reemplazar con fetch a https://sebastiancerda-ia.app.n8n.cloud/api/v1/
-// Requiere header: X-N8N-API-KEY desde variable de entorno
+// Real data from Supabase — agents table populated via n8n-webhook
 
 interface N8NService {
-  getWorkflows(): Promise<Agent[]>;
+  getWorkflows(): Promise<any[]>;
   getExecutions(workflowId: string, limit: number): Promise<any[]>;
   triggerWorkflow(workflowId: string): Promise<void>;
 }
 
 export const n8nService: N8NService = {
   async getWorkflows() {
-    return mockAgents.filter((a) => a.platform === 'n8n');
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('platform', 'n8n');
+    if (error) {
+      console.error('n8nService.getWorkflows error:', error);
+      return [];
+    }
+    return data || [];
   },
-  async getExecutions(_workflowId: string, limit: number) {
-    return Array.from({ length: limit }, (_, i) => ({
-      id: `exec-${i}`,
-      finished: true,
-      startedAt: new Date(Date.now() - i * 6 * 3600000).toISOString(),
-      stoppedAt: new Date(Date.now() - i * 6 * 3600000 + 3000).toISOString(),
-      status: 'success',
-      itemsProcessed: Math.floor(Math.random() * 10) + 1,
-    }));
+  async getExecutions(agentId: string, limit: number) {
+    const { data, error } = await supabase
+      .from('executions')
+      .select('*')
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('n8nService.getExecutions error:', error);
+      return [];
+    }
+    return data || [];
   },
   async triggerWorkflow(_workflowId: string) {
-    console.log('Mock: workflow triggered');
+    // Will be implemented via orchestrator-api or n8n MCP
+    console.log('Trigger workflow — use orchestrator-api');
   },
 };

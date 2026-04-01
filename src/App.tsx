@@ -38,6 +38,7 @@ const queryClient = new QueryClient({
   },
 });
 
+// Realtime: only agents table here. Alerts + RAG are in useNotifications (single source).
 function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   const { session } = useAuth();
@@ -52,20 +53,8 @@ function RealtimeProvider({ children }: { children: React.ReactNode }) {
       })
       .subscribe();
 
-    const alertsChannel = supabase
-      .channel('new-alerts')
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'alerts',
-        filter: 'priority=eq.critica',
-      }, (payload) => {
-        toast.error(`Alerta crítica: ${(payload.new as any).title}`, { duration: 8000 });
-        qc.invalidateQueries({ queryKey: ['alerts'] });
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(agentsChannel);
-      supabase.removeChannel(alertsChannel);
     };
   }, [qc, session]);
 

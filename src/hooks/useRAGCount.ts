@@ -1,18 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Consolidated: uses the same queryKey as useSupabaseRAG so no duplicate request
 export function useRAGCount() {
   const { data: count = 0 } = useQuery({
-    queryKey: ['rag_count'],
+    queryKey: ['rag_documents'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('rag_documents')
-        .select('*', { count: 'exact', head: true });
+        .select('id, fuente, agent_id, chunk_count, titulo, categoria, criterios_cna, fecha, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
       if (error) throw error;
-      return count || 0;
+      return data || [];
     },
-    staleTime: 60000,
-    refetchInterval: 120000,
+    staleTime: 120000,
+    select: (data) => data.length,
   });
   return count;
 }

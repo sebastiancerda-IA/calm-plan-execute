@@ -1,8 +1,7 @@
-import { memo, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, AlertTriangle, Play } from 'lucide-react';
-import { toast } from 'sonner';
 
 function timeAgo(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
