@@ -62,3 +62,10 @@ export const otecProgramsService = {
 export const acreditationDocsService = {
   getAll: () => supabase.from('acreditation_documents').select('*').order('uploaded_at', { ascending: false }),
 };
+
+export const agentTasksService = {
+  getByAgent: (agentId: string) =>
+    supabase.from('agent_tasks').select('*').eq('agent_id', agentId).order('created_at', { ascending: false }),
+  updateStatus: (id: string, status: string) =>
+    supabase.from('agent_tasks').update({ status, updated_at: new Date().toISOString() }).eq('id', id),
+};
