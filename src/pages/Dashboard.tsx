@@ -22,6 +22,7 @@ function DashboardInner() {
 
   return (
     <div className="space-y-4">
+      <WelcomeCard />
       {w.globalMetrics && <GlobalMetrics />}
       {w.institutionalMetrics && <InstitutionalMetrics />}
       {w.agentMap && (

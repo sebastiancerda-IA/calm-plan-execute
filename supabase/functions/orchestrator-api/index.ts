@@ -235,7 +235,7 @@ serve(async (req) => {
             "get_status", "get_agents", "get_criteria", "get_alerts",
             "get_documents", "get_metrics", "get_tasks", "get_convenios",
             "update_agent", "create_alert", "add_execution", "add_rag_doc", "update_task",
-            "create_financial_record", "bulk_financial_records",
+            "create_financial_record", "bulk_financial_records", "bulk_rag_docs",
           ],
         }), {
           status: 400,
