@@ -179,8 +179,7 @@ function FinancialChat() {
             {recordCount} registros financieros
           </span>
         </div>
-
-      {/* Messages */}
+      </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
