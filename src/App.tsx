@@ -92,6 +92,7 @@ function AuthenticatedApp() {
               <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/finanzas" element={<Finanzas />} />
               <Route path="/convenios" element={<Convenios />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </PageTransition>
