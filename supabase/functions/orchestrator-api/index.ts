@@ -204,6 +204,24 @@ serve(async (req) => {
         break;
       }
 
+      case "bulk_rag_docs": {
+        if (!Array.isArray(params.documents)) throw new Error("documents array required");
+        const docs = params.documents.map((d: any) => ({
+          id: d.id || `rag-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          titulo: d.titulo,
+          fuente: d.fuente || "manual",
+          agent_id: d.agent_id || null,
+          categoria: d.categoria || null,
+          criterios_cna: d.criterios_cna || [],
+          chunk_count: d.chunk_count || 1,
+          fecha: d.fecha || new Date().toISOString().split("T")[0],
+        }));
+        const { data, error } = await supabase.from("rag_documents").insert(docs).select();
+        if (error) throw error;
+        result = { documents: data, count: data?.length };
+        break;
+      }
+
       case "get_convenios": {
         const { data } = await supabase.from("convenios").select("*").order("created_at", { ascending: false });
         result = { convenios: data };
