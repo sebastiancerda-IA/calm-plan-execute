@@ -1,55 +1,64 @@
+import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { Link } from 'react-router-dom';
-import { mockCriteria } from '@/data/mockCNA';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const levelColors = {
-  N1: '#991B1B',
-  N2: '#854D0E',
-  N3: '#166534',
+const levelColors: Record<string, { bg: string; text: string }> = {
+  N1: { bg: '#991B1B', text: '#FCA5A5' },
+  N2: { bg: '#854D0E', text: '#FDE68A' },
+  N3: { bg: '#166534', text: '#86EFAC' },
 };
 
-const criticalIds = ['C13', 'C14'];
-
 export function CNASnapshot() {
+  const { dimensions, overall } = useSupabaseCNA();
+
   return (
     <div className="rounded-md border border-border bg-card p-4 h-full">
-      <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
-        CNA Snapshot
-      </h3>
-      <div className="grid grid-cols-4 gap-2">
-        {mockCriteria.map((c) => (
-          <Tooltip key={c.id}>
-            <TooltipTrigger asChild>
-              <Link
-                to={`/cna?expand=${c.id}`}
-                className={`aspect-square rounded flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${
-                  criticalIds.includes(c.id) ? 'ring-1 ring-[#EF4444] animate-pulse-slow' : ''
-                }`}
-                style={{ backgroundColor: levelColors[c.currentLevel] }}
-              >
-                <span className="font-mono text-xs font-bold text-foreground">{c.id}</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-secondary border-border text-foreground">
-              <p className="font-semibold text-xs">{c.name}</p>
-              <p className="text-[10px] text-muted-foreground">
-                {c.currentLevel} → {c.targetLevel}
-                {c.gap && ` | ${c.gap}`}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+          CNA Snapshot
+        </h3>
+        <Link to="/cna" className="text-[10px] text-primary hover:underline">
+          Ver matriz completa →
+        </Link>
       </div>
-      <div className="mt-3 flex items-center gap-4 text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded" style={{ backgroundColor: '#991B1B' }} /> N1 Brecha
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded" style={{ backgroundColor: '#854D0E' }} /> N2 En meta
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded" style={{ backgroundColor: '#166534' }} /> N3 Fortaleza
-        </span>
+
+      <div className="mb-3">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-muted-foreground">Progreso global</span>
+          <span className="font-mono font-bold text-foreground">{overall}%</span>
+        </div>
+        <div className="h-1.5 bg-secondary rounded-full">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${overall}%`, backgroundColor: overall >= 80 ? '#22C55E' : '#EAB308' }}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {dimensions.map((dim) => (
+          <div key={dim.id} className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground flex-1 truncate">{dim.name.replace(/^[IVX]+ /, '')}</span>
+            <div className="flex gap-0.5">
+              {dim.criteria.map((c: any) => {
+                const colors = levelColors[c.currentLevel] || levelColors.N1;
+                return (
+                  <Link
+                    key={c.id}
+                    to={`/cna?expand=${c.id}`}
+                    className="w-5 h-5 rounded-sm flex items-center justify-center text-[8px] font-mono font-bold hover:ring-1 hover:ring-primary transition-all"
+                    style={{ backgroundColor: colors.bg, color: colors.text }}
+                    title={`${c.id}: ${c.name} (${c.currentLevel})`}
+                  >
+                    {c.id.replace('C', '')}
+                  </Link>
+                );
+              })}
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground w-12 text-right">
+              {dim.atTarget}/{dim.total}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
