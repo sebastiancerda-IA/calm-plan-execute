@@ -5,10 +5,12 @@ import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
 import {
   Upload, FileText, Check, Loader2, Send, Bot, Shield,
-  Database, Clock, AlertTriangle, ChevronDown, Sparkles,
+  Database, Clock, AlertTriangle, ChevronDown, Sparkles, Cpu,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 
