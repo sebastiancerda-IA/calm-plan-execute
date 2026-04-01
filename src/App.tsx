@@ -86,6 +86,7 @@ function AuthenticatedApp() {
               <Route path="/cna" element={<CNAMatrix />} />
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/rag" element={<RAGExplorer />} />
+              <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </PageTransition>
