@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
