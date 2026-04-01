@@ -6,6 +6,7 @@ import { ActivityFeedLive } from '@/components/dashboard/ActivityFeedLive';
 import { ActionCenter } from '@/components/dashboard/ActionCenter';
 import { InfraFooter } from '@/components/dashboard/InfraFooter';
 import { PulseWidget } from '@/components/dashboard/PulseWidget';
+import { DataChecklist } from '@/components/dashboard/DataChecklist';
 
 export default function Dashboard() {
   return (
@@ -17,7 +18,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <ActivityFeedLive />
         <AccreditationGuide />
-        <ActionCenter />
+        <div className="space-y-4">
+          <ActionCenter />
+          <DataChecklist />
+        </div>
       </div>
       <InfraFooter />
     </div>

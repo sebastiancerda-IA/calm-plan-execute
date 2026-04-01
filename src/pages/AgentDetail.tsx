@@ -1,13 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { agentsService, executionsService, emailLogsService } from '@/services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
 import { StatusDot } from '@/components/shared/StatusDot';
 import { MetricTile } from '@/components/shared/MetricTile';
 import { PriorityBadge } from '@/components/shared/PriorityBadge';
 import { AgentBadge } from '@/components/shared/AgentBadge';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Clock, Filter } from 'lucide-react';
+import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function timeAgo(iso?: string) {
@@ -18,9 +20,20 @@ function timeAgo(iso?: string) {
   return `hace ${Math.floor(h / 24)}d`;
 }
 
+const categoryColors: Record<string, string> = {
+  sistema: 'text-blue-400',
+  datos: 'text-amber-400',
+  integracion: 'text-purple-400',
+  monitoreo: 'text-cyan-400',
+};
+
+const priorityOrder: Record<string, number> = { critica: 0, alta: 1, media: 2, baja: 3 };
+
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
   const { agents } = useSupabaseAgents();
+  const queryClient = useQueryClient();
+  const [taskFilter, setTaskFilter] = useState<string>('all');
 
   const { data: agent } = useQuery({
     queryKey: ['agent', id],
@@ -50,6 +63,32 @@ export default function AgentDetail() {
       return data || [];
     },
     enabled: !!id,
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['agent_tasks', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_tasks')
+        .select('*')
+        .eq('agent_id', id || '')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const toggleTask = useMutation({
+    mutationFn: async ({ taskId, current }: { taskId: string; current: string }) => {
+      const next = current === 'completada' ? 'pendiente' : 'completada';
+      const { error } = await supabase
+        .from('agent_tasks')
+        .update({ status: next, updated_at: new Date().toISOString() })
+        .eq('id', taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent_tasks', id] }),
   });
 
   if (!agent) {
@@ -208,6 +247,74 @@ export default function AgentDetail() {
           ))}
         </div>
       </div>
+
+      {/* Tasks */}
+      {tasks.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+              Tareas Pendientes ({tasks.filter((t: any) => t.status !== 'completada').length}/{tasks.length})
+            </h3>
+            <div className="flex gap-1">
+              {['all', 'sistema', 'datos', 'integracion', 'monitoreo'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setTaskFilter(cat)}
+                  className={`text-[9px] px-2 py-0.5 rounded font-mono transition-colors ${
+                    taskFilter === cat
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {cat === 'all' ? 'Todas' : cat}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            {tasks
+              .filter((t: any) => taskFilter === 'all' || t.category === taskFilter)
+              .sort((a: any, b: any) => (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9))
+              .map((task: any) => (
+                <div
+                  key={task.id}
+                  className={`flex items-center gap-2 py-2 px-2 rounded border border-border transition-colors ${
+                    task.status === 'completada' ? 'opacity-50' : 'hover:bg-secondary/50'
+                  }`}
+                >
+                  <button
+                    onClick={() => toggleTask.mutate({ taskId: task.id, current: task.status })}
+                    className="shrink-0"
+                  >
+                    {task.status === 'completada' ? (
+                      <CheckCircle2 size={16} className="text-green-500" />
+                    ) : (
+                      <Circle size={16} className="text-muted-foreground hover:text-foreground" />
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs ${task.status === 'completada' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className="text-[10px] text-muted-foreground truncate">{task.description}</p>
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-mono ${categoryColors[task.category] || 'text-muted-foreground'}`}>
+                    {task.category}
+                  </span>
+                  <PriorityBadge priority={task.priority} />
+                  {task.due_date && (
+                    <span className="text-[9px] text-muted-foreground font-mono flex items-center gap-1">
+                      <Clock size={10} />
+                      {new Date(task.due_date).toLocaleDateString('es-CL')}
+                    </span>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Dependencies */}
       {(deps.length > 0 || dependents.length > 0) && (
