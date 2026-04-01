@@ -6,9 +6,11 @@ import {
   Database,
   Settings,
   GraduationCap,
+  DollarSign,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -21,24 +23,28 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Agentes', url: '/agents', icon: Users },
-  { title: 'CNA Matrix', url: '/cna', icon: Shield },
-  { title: 'Acreditación', url: '/acreditacion', icon: GraduationCap },
-  { title: 'Alertas', url: '/alerts', icon: AlertTriangle },
-  { title: 'RAG Explorer', url: '/rag', icon: Database },
-  { title: 'Settings', url: '/settings', icon: Settings },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard, restricted: false },
+  { title: 'Agentes', url: '/agents', icon: Users, restricted: false },
+  { title: 'CNA Matrix', url: '/cna', icon: Shield, restricted: false },
+  { title: 'Acreditación', url: '/acreditacion', icon: GraduationCap, restricted: false },
+  { title: 'Finanzas', url: '/finanzas', icon: DollarSign, restricted: true },
+  { title: 'Alertas', url: '/alerts', icon: AlertTriangle, restricted: false },
+  { title: 'RAG Explorer', url: '/rag', icon: Database, restricted: false },
+  { title: 'Settings', url: '/settings', icon: Settings, restricted: false },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const { isDirectorOrDG } = useAuth();
 
   const isActive = (url: string) => {
     if (url === '/') return location.pathname === '/';
     return location.pathname.startsWith(url);
   };
+
+  const visibleItems = navItems.filter(item => !item.restricted || isDirectorOrDG);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -46,7 +52,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
