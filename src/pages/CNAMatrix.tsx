@@ -129,7 +129,7 @@ export default function CNAMatrix() {
         <h1 className="text-xl font-semibold text-foreground">CNA Matrix</h1>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => exportCSV(dimensions)}
+            onClick={() => exportCNAMatrix(dimensions)}
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
           >
             <Download size={12} />
