@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useCNAProgress } from '@/hooks/useCNAProgress';
+import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
+import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
 import { AgentBadge } from '@/components/shared/AgentBadge';
-import { mockAgents } from '@/data/mockAgents';
 import { ChevronDown, ChevronRight, AlertTriangle, Download } from 'lucide-react';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-const levelColors = {
+const levelColors: Record<string, { bg: string; text: string }> = {
   N1: { bg: '#991B1B', text: '#FCA5A5' },
   N2: { bg: '#854D0E', text: '#FDE68A' },
   N3: { bg: '#166534', text: '#86EFAC' },
@@ -24,7 +24,7 @@ function exportCSV(dimensions: any[]) {
   const rows = [['ID', 'Nombre', 'Dimensión', 'Nivel Actual', 'Nivel Meta', 'Brecha', 'Evidencias', 'Acciones']];
   dimensions.forEach((dim) => {
     dim.criteria.forEach((c: any) => {
-      rows.push([c.id, c.name, dim.name, c.currentLevel, c.targetLevel, c.gap || '', String(c.evidenceCount), c.actions.join('; ')]);
+      rows.push([c.id, c.name, dim.name, c.currentLevel, c.targetLevel, c.gap || '', String(c.evidenceCount), (c.actions || []).join('; ')]);
     });
   });
   const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
@@ -38,7 +38,8 @@ function exportCSV(dimensions: any[]) {
 }
 
 export default function CNAMatrix() {
-  const { dimensions, overall } = useCNAProgress();
+  const { dimensions, overall } = useSupabaseCNA();
+  const { agents } = useSupabaseAgents();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
 
@@ -48,7 +49,10 @@ export default function CNAMatrix() {
   }, [searchParams]);
 
   const toggleExpand = (id: string) => setExpanded(expanded === id ? null : id);
-  const getAgent = (code: string) => mockAgents.find((a) => a.code === code);
+  const getAgent = (responsibleAgent: string) => {
+    const code = responsibleAgent?.split(' ')[0];
+    return agents.find((a: any) => a.code === code);
+  };
 
   return (
     <div className="space-y-6">
@@ -70,7 +74,6 @@ export default function CNAMatrix() {
         </div>
       </div>
 
-      {/* Dimension overview with donuts */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {dimensions.map((dim) => {
           const data = [
@@ -98,7 +101,6 @@ export default function CNAMatrix() {
         })}
       </div>
 
-      {/* Dimensions detail */}
       {dimensions.map((dim) => (
         <div key={dim.id} className="rounded-md border border-border bg-card overflow-hidden">
           <div className="p-4 flex items-center justify-between">
@@ -127,7 +129,7 @@ export default function CNAMatrix() {
           </div>
 
           <div className="border-t border-border">
-            {dim.criteria.map((c) => {
+            {dim.criteria.map((c: any) => {
               const isExpanded = expanded === c.id;
               const agent = getAgent(c.responsibleAgent);
               const hasBreach = c.currentLevel < c.targetLevel;
@@ -139,29 +141,15 @@ export default function CNAMatrix() {
                     className="w-full flex items-center justify-between p-3 hover:bg-accent transition-colors text-left"
                   >
                     <div className="flex items-center gap-3">
-                      {isExpanded ? (
-                        <ChevronDown size={14} className="text-muted-foreground" />
-                      ) : (
-                        <ChevronRight size={14} className="text-muted-foreground" />
-                      )}
+                      {isExpanded ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
                       <span className="font-mono text-xs font-bold text-foreground">{c.id}</span>
                       <span className="text-sm text-foreground">{c.name}</span>
                       {hasBreach && <AlertTriangle size={12} className="text-[#EF4444]" />}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span
-                        className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: levelColors[c.currentLevel].bg, color: levelColors[c.currentLevel].text }}
-                      >
-                        {c.currentLevel}
-                      </span>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: levelColors[c.currentLevel]?.bg, color: levelColors[c.currentLevel]?.text }}>{c.currentLevel}</span>
                       <span className="text-[10px] text-muted-foreground">→</span>
-                      <span
-                        className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: levelColors[c.targetLevel].bg, color: levelColors[c.targetLevel].text }}
-                      >
-                        {c.targetLevel}
-                      </span>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: levelColors[c.targetLevel]?.bg, color: levelColors[c.targetLevel]?.text }}>{c.targetLevel}</span>
                       {agent && <AgentBadge code={agent.code} color={agent.color} agentId={agent.id} />}
                       <span className="text-[10px] font-mono text-muted-foreground">{c.evidenceCount} evidencias</span>
                     </div>
@@ -180,11 +168,11 @@ export default function CNAMatrix() {
                           )}
                         </div>
                       )}
-                      {c.actions.length > 0 && (
+                      {(c.actions || []).length > 0 && (
                         <div>
                           <span className="text-[10px] text-muted-foreground uppercase">Acciones pendientes</span>
                           <ul className="mt-1 space-y-1">
-                            {c.actions.map((a, i) => (
+                            {c.actions.map((a: string, i: number) => (
                               <li key={i} className="text-xs text-muted-foreground flex items-center gap-2">
                                 <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                                 {a}
@@ -193,7 +181,7 @@ export default function CNAMatrix() {
                           </ul>
                         </div>
                       )}
-                      {!c.gap && c.actions.length === 0 && (
+                      {!c.gap && (c.actions || []).length === 0 && (
                         <p className="text-xs text-[#22C55E]">
                           {c.currentLevel === 'N3' ? 'Fortaleza institucional' : 'En meta — sin acciones pendientes'}
                         </p>
@@ -207,29 +195,20 @@ export default function CNAMatrix() {
         </div>
       ))}
 
-      {/* Accreditation Timeline */}
       <div className="rounded-md border border-border bg-card p-4">
         <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-4">
           Ruta a la Acreditación
         </h3>
         <div className="relative">
-          {/* Progress bar background */}
           <div className="absolute top-2 left-0 right-0 h-0.5 bg-secondary" />
           <div className="absolute top-2 left-0 h-0.5 bg-primary" style={{ width: '25%' }} />
-
           <div className="flex items-start justify-between relative">
             {milestones.map((m, i) => (
               <div key={m.label} className="text-center flex-1">
-                <div
-                  className={`w-4 h-4 rounded-full mx-auto mb-2 relative z-10 ${
-                    i === 0 ? 'bg-primary' : 'bg-secondary'
-                  }`}
-                />
+                <div className={`w-4 h-4 rounded-full mx-auto mb-2 relative z-10 ${i === 0 ? 'bg-primary' : 'bg-secondary'}`} />
                 <p className="text-xs font-semibold text-foreground">{m.label}</p>
                 <p className="text-[10px] text-muted-foreground font-mono">{m.date}</p>
-                {m.pct > 0 && (
-                  <p className="text-[10px] text-primary font-mono mt-1">{m.pct}%</p>
-                )}
+                {m.pct > 0 && <p className="text-[10px] text-primary font-mono mt-1">{m.pct}%</p>}
               </div>
             ))}
           </div>

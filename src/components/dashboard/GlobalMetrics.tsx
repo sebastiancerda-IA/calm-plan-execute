@@ -1,16 +1,28 @@
-import { useAgentStatus } from '@/hooks/useAgentStatus';
-import { useAlerts } from '@/hooks/useAlerts';
-import { mockEmails } from '@/data/mockEmails';
-import { ragStats } from '@/data/mockRAG';
+import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
+import { useSupabaseAlerts } from '@/hooks/useSupabaseAlerts';
+import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
+import { emailLogsService } from '@/services/supabaseService';
 import { MetricTile } from '@/components/shared/MetricTile';
+import { useQuery } from '@tanstack/react-query';
 
 export function GlobalMetrics() {
-  const { operativos, total } = useAgentStatus();
-  const { counts } = useAlerts();
-  const emails24h = mockEmails.filter((e) => {
-    const diff = Date.now() - new Date(e.fecha).getTime();
-    return diff < 24 * 3600000;
-  }).length;
+  const { operativos, total } = useSupabaseAgents();
+  const { counts } = useSupabaseAlerts();
+  const { stats } = useSupabaseRAG();
+
+  const { data: emailCount = 0 } = useQuery({
+    queryKey: ['emails_24h'],
+    queryFn: async () => {
+      const { count, error } = await emailLogsService.getCount24h();
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 300000,
+  });
+
+  const jinaPercent = stats.jinaTokensLimit > 0
+    ? ((Number(stats.jinaTokensUsed) / stats.jinaTokensLimit) * 100).toFixed(2)
+    : '0';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -24,7 +36,7 @@ export function GlobalMetrics() {
       />
       <MetricTile
         label="Emails procesados 24h"
-        value={emails24h}
+        value={emailCount}
         trend="up"
         color="#E8734A"
         sparkline={[5, 8, 6, 10, 9, 11, 13]}
@@ -41,9 +53,9 @@ export function GlobalMetrics() {
       />
       <MetricTile
         label="Base de conocimiento"
-        value={`${ragStats.totalDocuments} docs`}
+        value={`${stats.totalDocuments} docs`}
         trend="up"
-        suffix={`${((ragStats.jinaTokensUsed / ragStats.jinaTokensLimit) * 100).toFixed(2)}% Jina`}
+        suffix={`${jinaPercent}% Jina`}
         color="#3B82F6"
         sparkline={[30, 35, 38, 42, 45, 48, 51]}
         href="/rag"

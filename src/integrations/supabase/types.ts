@@ -14,7 +14,332 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          area: string
+          code: string
+          color: string
+          color_secondary: string | null
+          created_at: string | null
+          criteria_cna: string[] | null
+          dependencies: string[] | null
+          description: string | null
+          error_rate: number | null
+          id: string
+          items_processed_24h: number | null
+          last_run: string | null
+          name: string
+          platform: string
+          status: string
+          trigger_type: string | null
+          updated_at: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          area: string
+          code: string
+          color: string
+          color_secondary?: string | null
+          created_at?: string | null
+          criteria_cna?: string[] | null
+          dependencies?: string[] | null
+          description?: string | null
+          error_rate?: number | null
+          id: string
+          items_processed_24h?: number | null
+          last_run?: string | null
+          name: string
+          platform: string
+          status?: string
+          trigger_type?: string | null
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          area?: string
+          code?: string
+          color?: string
+          color_secondary?: string | null
+          created_at?: string | null
+          criteria_cna?: string[] | null
+          dependencies?: string[] | null
+          description?: string | null
+          error_rate?: number | null
+          id?: string
+          items_processed_24h?: number | null
+          last_run?: string | null
+          name?: string
+          platform?: string
+          status?: string
+          trigger_type?: string | null
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          action_required: string | null
+          agent_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string
+          resolved: boolean | null
+          resolved_at: string | null
+          title: string
+        }
+        Insert: {
+          action_required?: string | null
+          agent_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          title: string
+        }
+        Update: {
+          action_required?: string | null
+          agent_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cna_criteria: {
+        Row: {
+          actions: string[] | null
+          created_at: string | null
+          current_level: string | null
+          dimension: string
+          evidence_count: number | null
+          gap_description: string | null
+          id: string
+          is_mandatory: boolean | null
+          is_priority: boolean | null
+          name: string
+          responsible_agent: string | null
+          target_level: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actions?: string[] | null
+          created_at?: string | null
+          current_level?: string | null
+          dimension: string
+          evidence_count?: number | null
+          gap_description?: string | null
+          id: string
+          is_mandatory?: boolean | null
+          is_priority?: boolean | null
+          name: string
+          responsible_agent?: string | null
+          target_level?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: string[] | null
+          created_at?: string | null
+          current_level?: string | null
+          dimension?: string
+          evidence_count?: number | null
+          gap_description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          is_priority?: boolean | null
+          name?: string
+          responsible_agent?: string | null
+          target_level?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_logs: {
+        Row: {
+          accion_requerida: boolean | null
+          accion_resumen: string | null
+          agent_id: string | null
+          asunto: string | null
+          categoria: string | null
+          created_at: string | null
+          criterios_cna: string[] | null
+          de: string | null
+          deadline: string | null
+          fecha: string
+          id: string
+          prioridad: string | null
+          sub_etiqueta: string | null
+        }
+        Insert: {
+          accion_requerida?: boolean | null
+          accion_resumen?: string | null
+          agent_id?: string | null
+          asunto?: string | null
+          categoria?: string | null
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          de?: string | null
+          deadline?: string | null
+          fecha: string
+          id: string
+          prioridad?: string | null
+          sub_etiqueta?: string | null
+        }
+        Update: {
+          accion_requerida?: boolean | null
+          accion_resumen?: string | null
+          agent_id?: string | null
+          asunto?: string | null
+          categoria?: string | null
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          de?: string | null
+          deadline?: string | null
+          fecha?: string
+          id?: string
+          prioridad?: string | null
+          sub_etiqueta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executions: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          items_processed: number | null
+          started_at: string | null
+          status: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_processed?: number | null
+          started_at?: string | null
+          status?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_processed?: number | null
+          started_at?: string | null
+          status?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rag_documents: {
+        Row: {
+          agent_id: string | null
+          categoria: string | null
+          chunk_count: number | null
+          created_at: string | null
+          criterios_cna: string[] | null
+          fecha: string | null
+          fuente: string | null
+          id: string
+          titulo: string
+        }
+        Insert: {
+          agent_id?: string | null
+          categoria?: string | null
+          chunk_count?: number | null
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          fecha?: string | null
+          fuente?: string | null
+          id: string
+          titulo: string
+        }
+        Update: {
+          agent_id?: string | null
+          categoria?: string | null
+          chunk_count?: number | null
+          created_at?: string | null
+          criterios_cna?: string[] | null
+          fecha?: string | null
+          fuente?: string | null
+          id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rag_documents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          metric_text: string | null
+          metric_value: number | null
+          recorded_at: string | null
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          metric_text?: string | null
+          metric_value?: number | null
+          recorded_at?: string | null
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          metric_text?: string | null
+          metric_value?: number | null
+          recorded_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
