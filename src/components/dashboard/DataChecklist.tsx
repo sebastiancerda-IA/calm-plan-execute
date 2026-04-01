@@ -7,7 +7,7 @@ interface ChecklistItem {
   id: string;
   label: string;
   description: string;
-  checkFn: (data: any) => boolean;
+  checkFn: (docs: any[], metrics: any[], otec: any[]) => boolean;
   link: string;
 }
 
