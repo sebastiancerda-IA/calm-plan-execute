@@ -164,20 +164,9 @@ function TabEstadoActual() {
 
 // ─── Tab 2: Documentos RAG ─────────────────────────────────
 function TabDocumentosRAG() {
-  const queryClient = useQueryClient();
   const { documents, stats, isLoading } = useSupabaseRAG();
 
-  // Realtime subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('rag_docs_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rag_documents' }, (payload) => {
-        toast.success(`📄 Nuevo documento indexado: ${(payload.new as any).titulo}`);
-        queryClient.invalidateQueries({ queryKey: ['rag_documents'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  // Realtime handled centrally in useNotifications — no duplicate channel here
 
   const totalChunks = documents.reduce((s: number, d: any) => s + (d.chunk_count || 1), 0);
   const acredDocs = documents.filter((d: any) =>
