@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { exportFinancialRecords } from '@/lib/exportUtils';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
