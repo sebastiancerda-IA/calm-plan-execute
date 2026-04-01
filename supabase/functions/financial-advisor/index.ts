@@ -94,7 +94,15 @@ serve(async (req) => {
       });
     }
 
-    const { messages, mode = "analista" } = await req.json();
+    const ALLOWED_MODELS = [
+      "google/gemini-3-flash-preview",
+      "google/gemini-2.5-pro",
+      "openai/gpt-5",
+      "openai/gpt-5-mini",
+    ];
+
+    const { messages, mode = "analista", model: requestedModel } = await req.json();
+    const model = ALLOWED_MODELS.includes(requestedModel) ? requestedModel : "google/gemini-3-flash-preview";
 
     // Fetch financial context
     const [financialRes, metricsRes, otecRes] = await Promise.all([
