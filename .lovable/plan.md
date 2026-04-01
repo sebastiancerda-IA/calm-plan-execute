@@ -1,120 +1,128 @@
 
 
-# Plan: La Orquesta IDMA — De Monitor Pasivo a Centro de Comando Funcional
+# Plan Reformulado: Sprint Nocturno + Preparación para Día D
 
-## Problema Actual
-El dashboard es un monitor estático que muestra datos sin guiar ni permitir acción. No refleja el poder del ecosistema multiagente. Faltan datos institucionales clave (matrículas, OTEC, finanzas), no hay acciones ejecutables, y no hay inteligencia que guíe hacia la acreditación.
+## Cambios vs Plan Anterior
 
-## Visión
-Transformar La Orquesta de un "panel de estado" a un **centro de comando estratégico** que: muestra KPIs institucionales reales, guía activamente hacia la acreditación CNA 2027, permite ejecutar acciones, y está preparado para recibir documentos de acreditación mañana.
+1. **Tareas por agente**: Enfocadas en hacer funcionar el sistema al 100%, NO en acreditación (eso viene después de cargar datos mañana)
+2. **RAG**: No duplicamos infraestructura RAG — preparamos una API bridge para que Claude Code pueda leer/escribir en la Orquesta
+3. **A4 Informe**: Se redefine como preparación para que Claude Code tenga acceso completo al sistema via API
+4. **Bot asesor**: Se potencia con streaming + contexto dinámico de la DB
 
 ---
 
-## Bloque 1: Nuevas Tablas de Datos Institucionales
+## Bloque 1: API Bridge para Claude Code (~3 créditos)
 
-Crear 3 tablas nuevas en la base de datos para almacenar datos institucionales reales:
+Nueva Edge Function `orchestrator-api` — un endpoint REST que Claude Code puede llamar para leer y escribir en la Orquesta.
 
-**`institutional_metrics`** — KPIs de CFT IDMA
-- `metric_key`: matriculas_nuevas, matriculas_antiguas, matriculas_total, tasa_retencion, tasa_titulacion, tasa_empleabilidad, ingresos_mensual, gastos_mensual, balance
-- `metric_value`, `period` (2024-Q1, 2025-M03), `updated_at`
-- Esto alimenta un nuevo widget de KPIs institucionales en el Dashboard
+**Endpoints (todo en una sola Edge Function con routing por `action`):**
 
-**`otec_programs`** — Cursos y diplomados OTEC activos
-- `id`, `name`, `type` (curso/diplomado), `status` (activo/finalizado/programado), `sence_code`, `students_enrolled`, `start_date`, `end_date`, `empresa`, `revenue`
-- Alimenta un nuevo panel OTEC en el Dashboard
+```text
+POST /orchestrator-api
+Body: { action: "get_status" }        → Estado completo: agentes, alertas, criterios CNA, métricas
+Body: { action: "get_agents" }        → Lista de agentes con estado
+Body: { action: "get_criteria" }      → Estado CNA completo
+Body: { action: "get_alerts" }        → Alertas activas
+Body: { action: "get_documents" }     → Documentos de acreditación cargados
+Body: { action: "get_metrics" }       → Métricas institucionales
+Body: { action: "update_agent", ... } → Actualizar estado de agente
+Body: { action: "create_alert", ... } → Crear alerta
+Body: { action: "add_execution", ... }→ Registrar ejecución
+Body: { action: "add_rag_doc", ... }  → Registrar documento en RAG
+```
 
-**`acreditation_documents`** — Documentos de acreditación (anterior + actual)
-- `id`, `title`, `document_type` (informe_anterior/avance_actual/evidencia), `criterio_cna`, `dimension`, `file_path`, `summary`, `uploaded_at`, `processed` (boolean)
-- Preparado para recibir la carga de documentos de mañana
+Esto le da a Claude Code control total sobre la Orquesta. Mañana tú le das la URL del endpoint + la API key y Claude Code puede:
+- Leer todo el estado del sistema
+- Escribir ejecuciones cuando los agentes corren
+- Crear alertas
+- Registrar documentos que procese via su propio RAG (Qdrant)
+- Generar el super-análisis de optimización leyendo todo
 
-Seed data con valores realistas de CFT IDMA (matrículas ~600-800 estudiantes, cursos OTEC activos, etc.)
+**La sincronización con tu RAG de Claude Code**: No replicamos Qdrant aquí. Claude Code usa su Qdrant. La Orquesta registra en `rag_documents` los metadatos (título, fuente, criterio CNA, chunks). Claude Code llama `add_rag_doc` cada vez que indexa algo → la Orquesta lo refleja.
 
-## Bloque 2: Dashboard Expandido — KPIs Institucionales
+## Bloque 2: Tareas por Agente — Funcionalidad del Sistema (~3 créditos)
 
-Expandir `GlobalMetrics` de 4 a 8 métricas en 2 filas:
+Nueva tabla `agent_tasks` con tareas centradas en hacer el sistema operativo:
 
-**Fila 1 (operacional — ya existe, mejorada):**
-- Agentes operativos (ya existe)
-- Emails procesados 24h (ya existe)
-- Alertas activas (ya existe)
-- Base de conocimiento (ya existe)
+**Categorías:**
+- `sistema`: Configurar, conectar, activar componentes
+- `datos`: Cargar, validar, limpiar data
+- `integracion`: Conectar servicios externos
+- `monitoreo`: Verificar funcionamiento continuo
 
-**Fila 2 (institucional — nueva):**
-- Matrículas activas (nuevas + antiguas, con desglose)
-- Programas OTEC activos (cursos + diplomados)
-- Progreso CNA global (% con indicador de meta)
-- Balance financiero (ingresos vs gastos del mes)
+**Ejemplos de seed data (no acreditación, sino operación):**
+- A1 VCM: "Conectar workflow n8n de clasificación con webhook" (integración)
+- A1 VCM: "Validar que emails se clasifican correctamente en 5 categorías" (monitoreo)
+- C1 OTEC: "Cargar listado actualizado de cursos SENCE activos" (datos)
+- A3 RAG: "Verificar conexión Qdrant y estado de colección" (sistema)
+- A3 RAG: "Indexar documentos de acreditación anterior" (datos)
+- B2 Finanzas: "Cargar balance Q1 2025 en métricas institucionales" (datos)
+- AD Dios: "Configurar webhook de reportes automáticos" (integración)
+- B3 Calidad: "Conectar pipeline de procesamiento de documentos" (integración)
 
-## Bloque 3: Panel "Guía de Acreditación" — Nuevo Componente
+UI en `AgentDetail.tsx`: sección con lista de tareas, filtro por categoría, botón para marcar completada. RLS: SELECT + UPDATE para authenticated.
 
-Nuevo componente `AccreditationGuide` que reemplaza o complementa `CNASnapshot` en el Dashboard:
+## Bloque 3: Bot Asesor Potenciado con Streaming (~3 créditos)
 
-- Muestra los criterios con brecha critica (N1 cuando meta es N2+) destacados en rojo
-- Para cada brecha, muestra: qué falta, qué agente es responsable, próxima acción concreta
-- Indicador de "días restantes para acreditación" (cuenta regresiva a Mar 2027)
-- Sección "Documentos pendientes de carga" — lista de lo que falta subir, preparado para la carga de mañana
-- Este componente usa Lovable AI para generar recomendaciones estratégicas basadas en el estado actual de los criterios
+Edge Function `acreditation-advisor` con streaming SSE (no el `cna-advisor` actual que devuelve bloque completo).
 
-## Bloque 4: Centro de Acciones — Ejecutar Comandos
+**Potenciadores propuestos:**
+1. **Contexto dinámico completo**: Lee criterios CNA + alertas + documentos cargados + métricas institucionales + programas OTEC antes de cada respuesta — el bot sabe todo
+2. **Memoria de conversación**: Envía historial completo de mensajes al modelo para que la conversación sea coherente
+3. **System prompt con benchmarks**: Incluye datos de las 8 instituciones comparables (Juan Bohon, Projazz, Ecole, San Agustín, Virginio Gómez, ENAC, UCV) con sus resultados de acreditación
+4. **Modo dual**: "Asesor" (guía estratégica) y "Evaluador" (simula par evaluador CNA, es duro y crítico)
+5. **Streaming token-by-token**: Respuestas en tiempo real, no bloques
 
-Nuevo componente `ActionCenter` en el Dashboard (o como página `/actions`):
+Panel de chat integrado en `/acreditacion` con:
+- Input de texto + historial scrollable
+- Botón toggle "Modo Asesor / Modo Evaluador"
+- Renderizado markdown de respuestas
+- Indicador de streaming activo
 
-- Botones de acción rápida:
-  - "Forzar clasificación de emails" — llama al webhook n8n para ejecutar A1/C1
-  - "Re-indexar RAG" — llama al webhook para ejecutar A3
-  - "Generar briefing diario" — genera resumen con Lovable AI basado en alertas + emails recientes
-  - "Exportar reporte CNA" — genera PDF/CSV del estado actual
-- Cada acción muestra estado (ejecutando/completado/error) con feedback visual
-- Log de acciones ejecutadas desde la UI
+## Bloque 4: Preparación del Terreno para Mañana (~2 créditos)
 
-## Bloque 5: Preparación para Carga de Documentos de Acreditación
+### 4a. Página de Estado del Sistema
+Expandir Settings con sección "Estado del Sistema para Claude Code":
+- URL del endpoint `orchestrator-api`
+- Payload examples listos para copiar
+- Checklist de lo que Claude Code necesita hacer mañana:
+  - Leer estado completo del sistema
+  - Analizar gaps y generar super-prompt de optimización
+  - Conectar sus agentes n8n con el webhook
+  - Registrar documentos RAG procesados
 
-Crear página `/acreditacion` o expandir RAG Explorer:
+### 4b. Dashboard Checklist de Carga
+Componente en Dashboard mostrando qué data falta cargar:
+- Informe acreditación anterior (PDF)
+- Carpeta avance actual con asesores
+- Correos sistematizados de asesores
+- Datos de matrículas actualizados
+- Balance financiero Q1 2025
+Cada item con estado (pendiente/cargado) y link directo a donde cargarlo.
 
-- Zona de carga de archivos (storage bucket) para PDFs de acreditación
-- Al subir, el documento se registra en `acreditation_documents` con su criterio CNA asociado
-- Vista de "Informe anterior" vs "Avance actual" por criterio
-- Contador de evidencias por criterio (alimenta el evidence_count de cna_criteria)
-- Edge function que procesa documentos subidos: extrae texto con Lovable AI y genera resumen automático
-
-## Bloque 6: ActivityFeed con Datos Reales + Seed Data
-
-- Reemplazar ActivityFeed mock con datos reales de `executions` + `alerts`
-- Insertar seed data en `email_logs` y `executions` para que la app no esté vacía
-- Insertar más `rag_documents` (llegar a 51 como indica el spec original)
-
-## Bloque 7: Asesor IA Integrado (Edge Function + Lovable AI)
-
-Edge function `cna-advisor` que:
-- Recibe el estado actual de los 16 criterios
-- Usa Lovable AI (gemini-3-flash-preview) para analizar brechas y generar:
-  - Recomendaciones priorizadas
-  - Estimación de nivel alcanzable por criterio
-  - Plan de acción sugerido para los próximos 30 días
-- Se muestra en un panel lateral o modal desde CNA Matrix y desde el Dashboard
-- NO es un chat — es un análisis on-demand que se ejecuta al presionar "Analizar estado CNA"
+### 4c. Edge Function `process-document`
+Al subir un PDF a acreditation-docs:
+1. Registra en `acreditation_documents`
+2. Genera resumen con Lovable AI (gemini-3-flash-preview)
+3. Marca `processed = true`
+4. Así cuando Claude Code lea los documentos mañana, ya tendrá resúmenes
 
 ---
 
 ## Orden de Ejecución
 
-1. **Bloque 1** — Tablas nuevas + seed data (~3 créditos)
-2. **Bloque 6** — Seed data faltante + ActivityFeed real (~2 créditos)
-3. **Bloque 2** — Dashboard KPIs expandidos (~2 créditos)
-4. **Bloque 3** — Panel guía de acreditación (~3 créditos)
-5. **Bloque 5** — Página de carga de documentos (~4 créditos)
-6. **Bloque 4** — Centro de acciones (~3 créditos)
-7. **Bloque 7** — Asesor IA CNA (~3 créditos)
+1. **Bloque 1** — API Bridge para Claude Code (la pieza clave)
+2. **Bloque 2** — Tareas por agente (operación del sistema)
+3. **Bloque 3** — Bot asesor con streaming
+4. **Bloque 4** — Checklist + process-document
 
-**Total estimado: ~20 créditos**
+**Total estimado: ~11 créditos**
 
-## Notas Tecnicas
+## Notas Técnicas
 
-- Las tablas nuevas usan RLS con policy SELECT para authenticated
-- Storage bucket `acreditation-docs` para archivos PDF
-- Edge function `cna-advisor` usa `LOVABLE_API_KEY` (ya disponible) con gemini-3-flash-preview
-- Edge function `process-document` para extraer resúmenes de PDFs subidos
-- Los KPIs institucionales se leen de `institutional_metrics` — preparados para que mañana se llenen con datos reales via n8n o carga manual
-- Programas OTEC se leen de `otec_programs` — misma lógica
-- No se agregan dependencias pesadas — todo usa lo ya instalado (recharts, framer-motion, React Query)
+- `orchestrator-api` usa `SUPABASE_SERVICE_ROLE_KEY` para bypass RLS — autenticado via header `X-Api-Key` que validamos contra un secret
+- `agent_tasks` necesita RLS SELECT + UPDATE para authenticated
+- El bot asesor usa streaming SSE siguiendo el patrón documentado de Lovable AI
+- `process-document` se dispara client-side post-upload (no hay triggers de storage en Cloud)
+- Mañana Claude Code llama `GET /orchestrator-api?action=get_status` y obtiene un JSON con todo el ecosistema para su análisis
 
