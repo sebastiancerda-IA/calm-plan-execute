@@ -282,6 +282,7 @@ function TabAgenteDios() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [mode, setMode] = useState<'asesor' | 'evaluador'>('asesor');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('acred_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { documents } = useSupabaseRAG();
 
