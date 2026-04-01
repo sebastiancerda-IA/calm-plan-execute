@@ -1,7 +1,7 @@
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Handshake, Plus, FileText, Building2, Search, Filter } from 'lucide-react';
+import { Handshake, Plus, FileText, Building2, Search, Filter, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
