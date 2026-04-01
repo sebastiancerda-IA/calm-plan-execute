@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, Circle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 
 interface ChecklistItem {
   id: string;
@@ -16,67 +17,64 @@ const CHECKLIST: ChecklistItem[] = [
     id: 'informe_anterior',
     label: 'Informe acreditación anterior',
     description: 'PDF del informe de la acreditación pasada',
-    checkFn: (docs: any[]) => docs.some((d) => d.document_type === 'informe_anterior'),
+    checkFn: (docs) => docs.some((d) => d.document_type === 'informe_anterior'),
     link: '/acreditacion',
   },
   {
     id: 'avance_actual',
     label: 'Avance actual con asesores',
     description: 'Carpeta de trabajo actualizada con asesores',
-    checkFn: (docs: any[]) => docs.some((d) => d.document_type === 'avance_actual'),
+    checkFn: (docs) => docs.some((d) => d.document_type === 'avance_actual'),
     link: '/acreditacion',
   },
   {
     id: 'matriculas',
     label: 'Datos de matrículas actualizados',
     description: 'Matrículas nuevas y antiguas 2025',
-    checkFn: (_: any, metrics: any[]) =>
-      metrics.some((m) => m.metric_key === 'matriculas_total'),
+    checkFn: (_, metrics) => metrics.some((m) => m.metric_key === 'matriculas_total'),
     link: '/settings',
   },
   {
     id: 'balance',
     label: 'Balance financiero Q1 2025',
     description: 'Ingresos y gastos del primer trimestre',
-    checkFn: (_: any, metrics: any[]) =>
-      metrics.some((m) => m.metric_key === 'balance'),
+    checkFn: (_, metrics) => metrics.some((m) => m.metric_key === 'balance'),
     link: '/settings',
   },
   {
     id: 'otec',
     label: 'Cursos OTEC activos cargados',
     description: 'Listado de cursos y diplomados SENCE',
-    checkFn: (_: any, __: any, otec: any[]) => otec.length >= 3,
+    checkFn: (_, __, otec) => otec.length >= 3,
     link: '/settings',
   },
 ];
 
 export function DataChecklist() {
-  const { data: docs = [] } = useQuery({
-    queryKey: ['checklist_docs'],
+  // Single combined query instead of 3 separate ones
+  const { data } = useQuery({
+    queryKey: ['checklist_combined'],
     queryFn: async () => {
-      const { data } = await supabase.from('acreditation_documents').select('document_type');
-      return data || [];
+      const [docsRes, metricsRes, otecRes] = await Promise.all([
+        supabase.from('acreditation_documents').select('document_type'),
+        supabase.from('institutional_metrics').select('metric_key'),
+        supabase.from('otec_programs').select('id').eq('status', 'activo'),
+      ]);
+      return {
+        docs: docsRes.data || [],
+        metrics: metricsRes.data || [],
+        otec: otecRes.data || [],
+      };
     },
+    staleTime: 120000,
   });
 
-  const { data: metrics = [] } = useQuery({
-    queryKey: ['checklist_metrics'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutional_metrics').select('metric_key');
-      return data || [];
-    },
-  });
+  const { docs = [], metrics = [], otec = [] } = data || {};
 
-  const { data: otec = [] } = useQuery({
-    queryKey: ['checklist_otec'],
-    queryFn: async () => {
-      const { data } = await supabase.from('otec_programs').select('id').eq('status', 'activo');
-      return data || [];
-    },
-  });
-
-  const completed = CHECKLIST.filter((item) => item.checkFn(docs, metrics, otec)).length;
+  const completed = useMemo(
+    () => CHECKLIST.filter((item) => item.checkFn(docs, metrics, otec)).length,
+    [docs, metrics, otec]
+  );
 
   return (
     <div className="rounded-md border border-border bg-card p-4">

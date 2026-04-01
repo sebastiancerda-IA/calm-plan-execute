@@ -10,6 +10,7 @@ export function useSupabaseRAG() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 120000,
   });
 
   const { data: metrics = [] } = useQuery({
@@ -19,6 +20,7 @@ export function useSupabaseRAG() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 120000,
   });
 
   const stats = useMemo(() => {
@@ -27,7 +29,6 @@ export function useSupabaseRAG() {
     const gmailDocs = documents.filter((d: any) => d.fuente === 'gmail').length;
     const driveDocs = documents.filter((d: any) => d.fuente === 'drive').length;
 
-    // Agent distribution
     const agentDist: Record<string, number> = {};
     documents.forEach((d: any) => {
       const key = d.agent_id || 'unknown';

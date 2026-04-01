@@ -17,10 +17,11 @@ export function useSupabaseCNA() {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 120000,
   });
 
-  const dimensions = useMemo(() => {
-    return dimensionDefs.map((dim) => {
+  const { dimensions, overall } = useMemo(() => {
+    const dims = dimensionDefs.map((dim) => {
       const criteria = criteriaData
         .filter((c: any) => dim.criteria.includes(c.id))
         .map((c: any) => ({
@@ -46,12 +47,11 @@ export function useSupabaseCNA() {
         percentage: total > 0 ? Math.round((atTarget / total) * 100) : 0,
       };
     });
-  }, [criteriaData]);
 
-  const overall = useMemo(() => {
-    if (criteriaData.length === 0) return 0;
-    const atTarget = criteriaData.filter((c: any) => c.current_level >= c.target_level).length;
-    return Math.round((atTarget / criteriaData.length) * 100);
+    const ov = criteriaData.length === 0 ? 0 :
+      Math.round((criteriaData.filter((c: any) => c.current_level >= c.target_level).length / criteriaData.length) * 100);
+
+    return { dimensions: dims, overall: ov };
   }, [criteriaData]);
 
   return { dimensions, overall, criteria: criteriaData, isLoading };

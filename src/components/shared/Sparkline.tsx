@@ -1,3 +1,5 @@
+import { memo, useMemo } from 'react';
+
 interface SparklineProps {
   data: number[];
   color: string;
@@ -5,18 +7,22 @@ interface SparklineProps {
   height?: number;
 }
 
-export function Sparkline({ data, color, width = 60, height = 20 }: SparklineProps) {
-  if (!data.length) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const points = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * width;
-      const y = height - ((v - min) / range) * (height - 4) - 2;
-      return `${x},${y}`;
-    })
-    .join(' ');
+function SparklineInner({ data, color, width = 60, height = 20 }: SparklineProps) {
+  const points = useMemo(() => {
+    if (!data.length) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    return data
+      .map((v, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - ((v - min) / range) * (height - 4) - 2;
+        return `${x},${y}`;
+      })
+      .join(' ');
+  }, [data, width, height]);
+
+  if (!points) return null;
 
   return (
     <svg width={width} height={height} className="inline-block">
@@ -31,3 +37,5 @@ export function Sparkline({ data, color, width = 60, height = 20 }: SparklinePro
     </svg>
   );
 }
+
+export const Sparkline = memo(SparklineInner);
