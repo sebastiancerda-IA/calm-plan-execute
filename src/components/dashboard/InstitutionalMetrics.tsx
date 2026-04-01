@@ -11,7 +11,7 @@ export function InstitutionalMetrics() {
   const balanceM = Number(balance) / 1000000;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <MetricTile
         label="Matrículas activas"
         value={matriculasTotal}

@@ -33,7 +33,7 @@ export function PageContainer({ children }: PageContainerProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main className="flex-1 overflow-auto p-4 lg:p-6">
+          <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 lg:p-6">
             {children}
           </main>
         </div>

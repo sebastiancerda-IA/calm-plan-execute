@@ -14,7 +14,12 @@ const DataChecklist = lazy(() => import('@/components/dashboard/DataChecklist').
 const DashboardAnalytics = lazy(() => import('@/components/dashboard/DashboardAnalytics').then(m => ({ default: m.DashboardAnalytics })));
 
 function WidgetFallback() {
-  return <div className="rounded-lg border border-border bg-card animate-pulse h-24" />;
+  return (
+    <div className="glass-card rounded-lg p-4 space-y-3">
+      <div className="h-3 w-20 rounded bg-muted" style={{ backgroundImage: 'linear-gradient(90deg, transparent 0%, hsl(var(--idma-green) / 0.08) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+      <div className="h-6 w-32 rounded bg-muted" style={{ backgroundImage: 'linear-gradient(90deg, transparent 0%, hsl(var(--idma-green) / 0.08) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+    </div>
+  );
 }
 
 function DashboardInner() {

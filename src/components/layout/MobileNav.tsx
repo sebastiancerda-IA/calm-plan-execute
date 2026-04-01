@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
@@ -28,14 +29,24 @@ export const MobileNav = memo(function MobileNav() {
             <NavLink
               key={to}
               to={to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors ${
-                active
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
-              }`}
+              className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-              <span className="text-[10px] font-medium">{label}</span>
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className={`flex flex-col items-center gap-0.5 ${
+                  active ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                <span className="text-[10px] font-medium">{label}</span>
+              </motion.div>
+              {active && (
+                <motion.div
+                  layoutId="mobile-nav-pill"
+                  className="absolute -bottom-1 w-6 h-[3px] rounded-full bg-primary"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
             </NavLink>
           );
         })}
