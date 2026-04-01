@@ -77,7 +77,7 @@ export default function AgentDetail() {
           <div className="flex items-center gap-3">
             <span className="font-mono text-lg font-bold" style={{ color: agent.color }}>{agent.code}</span>
             <h1 className="text-xl font-semibold text-foreground">{agent.name}</h1>
-            <StatusDot status={agent.status} />
+            <StatusDot status={agent.status as any} />
             <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded font-mono">{agent.platform}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-1">{agent.description}</p>
