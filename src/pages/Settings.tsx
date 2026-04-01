@@ -220,6 +220,21 @@ function N8NPanel() {
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">El resultado aparecerá en tiempo real en el Dashboard</p>
       </div>
+      {/* n8n Sync payloads */}
+      <div className="border-t border-border pt-3">
+        <span className="text-[10px] text-muted-foreground block mb-2">Payloads de sincronización n8n (enviar al webhook URL)</span>
+        <div className="grid grid-cols-1 gap-2">
+          {N8N_SYNC_EXAMPLES.map((ex) => (
+            <div key={ex.label} className="bg-secondary rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] text-muted-foreground font-medium">{ex.label}</span>
+                <CopyButton text={ex.payload} />
+              </div>
+              <code className="text-[10px] text-foreground font-mono block whitespace-pre-wrap break-all">{ex.payload}</code>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
