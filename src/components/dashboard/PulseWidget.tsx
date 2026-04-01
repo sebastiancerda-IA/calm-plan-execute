@@ -1,29 +1,49 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
-function generateActivityData() {
-  const now = new Date();
-  return Array.from({ length: 24 }, (_, i) => {
-    const hour = new Date(now.getTime() - (23 - i) * 3600000);
-    const h = hour.getHours();
-    // Simulate activity: higher during work hours
-    let intensity: number;
-    if (h >= 7 && h <= 9) intensity = 3 + Math.floor(Math.random() * 4);
-    else if (h >= 10 && h <= 18) intensity = 1 + Math.floor(Math.random() * 3);
-    else if (h >= 22 || h <= 1) intensity = Math.random() > 0.7 ? 2 : 0; // indexing window
-    else intensity = Math.floor(Math.random() * 2);
-    return {
-      hour: `${h.toString().padStart(2, '0')}:00`,
-      intensity,
-      label: `${h.toString().padStart(2, '0')}:00 — ${intensity} eventos`,
-    };
-  });
-}
 
 const intensityColors = ['hsl(var(--secondary))', '#1E3A5F', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
 
 export function PulseWidget() {
-  const data = useMemo(generateActivityData, []);
+  // Use real execution data for pulse
+  const { data: executions = [] } = useQuery({
+    queryKey: ['pulse_executions'],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 24 * 3600000).toISOString();
+      const { data } = await supabase
+        .from('executions')
+        .select('started_at, items_processed')
+        .gte('started_at', since)
+        .order('started_at', { ascending: true });
+      return data || [];
+    },
+    staleTime: 60000,
+    refetchInterval: 120000,
+  });
+
+  const data = useMemo(() => {
+    const now = new Date();
+    const hourBuckets = Array.from({ length: 24 }, (_, i) => {
+      const hour = new Date(now.getTime() - (23 - i) * 3600000);
+      const h = hour.getHours();
+      const start = new Date(hour);
+      start.setMinutes(0, 0, 0);
+      const end = new Date(start.getTime() + 3600000);
+
+      const count = executions.filter((e: any) => {
+        const t = new Date(e.started_at).getTime();
+        return t >= start.getTime() && t < end.getTime();
+      }).length;
+
+      return {
+        hour: `${h.toString().padStart(2, '0')}:00`,
+        intensity: Math.min(count, 6),
+        label: `${h.toString().padStart(2, '0')}:00 — ${count} eventos`,
+      };
+    });
+    return hourBuckets;
+  }, [executions]);
 
   return (
     <div className="rounded-md border border-border bg-card p-4">
