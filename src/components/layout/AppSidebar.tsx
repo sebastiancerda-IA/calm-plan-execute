@@ -29,6 +29,7 @@ const navItems = [
   { title: 'CNA Matrix', url: '/cna', icon: Shield, restricted: false },
   { title: 'Acreditación', url: '/acreditacion', icon: GraduationCap, restricted: false },
   { title: 'Finanzas', url: '/finanzas', icon: DollarSign, restricted: true },
+  { title: 'Convenios', url: '/convenios', icon: Handshake, restricted: false },
   { title: 'Alertas', url: '/alerts', icon: AlertTriangle, restricted: false },
   { title: 'RAG Explorer', url: '/rag', icon: Database, restricted: false },
   { title: 'Settings', url: '/settings', icon: Settings, restricted: false },

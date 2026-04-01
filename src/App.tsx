@@ -90,6 +90,7 @@ function AuthenticatedApp() {
               <Route path="/rag" element={<RAGExplorer />} />
               <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/finanzas" element={<Finanzas />} />
+              <Route path="/convenios" element={<Convenios />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </PageTransition>
