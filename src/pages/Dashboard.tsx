@@ -1,6 +1,7 @@
 import { lazy, Suspense, memo } from 'react';
 import { GlobalMetrics } from '@/components/dashboard/GlobalMetrics';
 import { InstitutionalMetrics } from '@/components/dashboard/InstitutionalMetrics';
+import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 const AgentMap = lazy(() => import('@/components/dashboard/AgentMap').then(m => ({ default: m.AgentMap })));
@@ -21,6 +22,7 @@ function DashboardInner() {
 
   return (
     <div className="space-y-4">
+      <WelcomeCard />
       {w.globalMetrics && <GlobalMetrics />}
       {w.institutionalMetrics && <InstitutionalMetrics />}
       {w.agentMap && (

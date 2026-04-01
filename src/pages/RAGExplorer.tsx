@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
 import { useSupabaseAgents } from '@/hooks/useSupabaseAgents';
-import { Search, FolderOpen } from 'lucide-react';
+import { Search, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { ExportButton } from '@/components/shared/ExportButton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { driveFolders } from '@/data/mockRAG';
 
@@ -22,6 +23,7 @@ export default function RAGExplorer() {
   const { documents, stats, isLoading } = useSupabaseRAG();
   const { agents } = useSupabaseAgents();
   const [query, setQuery] = useState('');
+  const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
   const debouncedQuery = useDebounce(query, 300);
 
   const filteredDocs = debouncedQuery.trim()
@@ -40,7 +42,10 @@ export default function RAGExplorer() {
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'RAG Explorer' }]} />
-      <h1 className="text-xl font-semibold text-foreground">RAG Explorer</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-foreground">RAG Explorer</h1>
+        <ExportButton data={filteredDocs} filename="rag_documents" />
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-md border border-border bg-card p-4">
@@ -97,19 +102,16 @@ export default function RAGExplorer() {
         <div className="flex gap-2 mb-4">
           <div className="flex-1 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar en la base de conocimiento..."
-              className="w-full bg-background border border-border rounded px-3 py-2 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-            />
+              className="w-full bg-background border border-border rounded px-3 py-2 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary" />
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
+                <th className="text-left py-2 px-2 w-6"></th>
                 <th className="text-left py-2 px-2">Título</th>
                 <th className="text-left py-2 px-2">Fuente</th>
                 <th className="text-left py-2 px-2">Agente</th>
@@ -121,17 +123,57 @@ export default function RAGExplorer() {
             <tbody>
               {filteredDocs.map((doc: any) => {
                 const agent = agents.find((a: any) => a.id === doc.agent_id);
+                const isExpanded = expandedDoc === doc.id;
                 return (
-                  <tr key={doc.id} className="border-b border-border">
-                    <td className="py-2 px-2 text-foreground max-w-xs truncate">{highlightText(doc.titulo, query)}</td>
-                    <td className="py-2 px-2 text-muted-foreground font-mono">{doc.fuente}</td>
-                    <td className="py-2 px-2 font-mono" style={{ color: agent?.color || '#6B7280' }}>
-                      {agent?.code || doc.agent_id}
-                    </td>
-                    <td className="py-2 px-2 text-muted-foreground font-mono">{doc.fecha}</td>
-                    <td className="py-2 px-2 text-muted-foreground font-mono text-[10px]">{(doc.criterios_cna || []).join(', ')}</td>
-                    <td className="py-2 px-2 text-muted-foreground font-mono">{doc.chunk_count}</td>
-                  </tr>
+                  <>
+                    <tr key={doc.id} className="border-b border-border cursor-pointer hover:bg-accent/30" onClick={() => setExpandedDoc(isExpanded ? null : doc.id)}>
+                      <td className="py-2 px-2 text-muted-foreground">
+                        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                      </td>
+                      <td className="py-2 px-2 text-foreground max-w-xs truncate">{highlightText(doc.titulo, query)}</td>
+                      <td className="py-2 px-2 text-muted-foreground font-mono">{doc.fuente}</td>
+                      <td className="py-2 px-2 font-mono" style={{ color: agent?.color || '#6B7280' }}>{agent?.code || doc.agent_id}</td>
+                      <td className="py-2 px-2 text-muted-foreground font-mono">{doc.fecha}</td>
+                      <td className="py-2 px-2 text-muted-foreground font-mono text-[10px]">{(doc.criterios_cna || []).join(', ')}</td>
+                      <td className="py-2 px-2 text-muted-foreground font-mono">{doc.chunk_count}</td>
+                    </tr>
+                    {isExpanded && (
+                      <tr key={`${doc.id}-detail`} className="border-b border-border bg-accent/20">
+                        <td colSpan={7} className="p-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+                            <div>
+                              <span className="text-muted-foreground block">ID</span>
+                              <span className="font-mono text-foreground">{doc.id}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block">Categoría</span>
+                              <span className="text-foreground">{doc.categoria || '—'}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block">Chunks</span>
+                              <span className="text-foreground font-mono">{doc.chunk_count}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block">Indexado</span>
+                              <span className="text-foreground font-mono">{doc.created_at ? new Date(doc.created_at).toLocaleString('es-CL') : '—'}</span>
+                            </div>
+                            <div className="col-span-2 md:col-span-4">
+                              <span className="text-muted-foreground block">Criterios CNA vinculados</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {(doc.criterios_cna || []).length > 0 ? (
+                                  doc.criterios_cna.map((c: string) => (
+                                    <span key={c} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary">{c}</span>
+                                  ))
+                                ) : (
+                                  <span className="text-muted-foreground italic">Sin criterios vinculados</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
             </tbody>
