@@ -20,9 +20,20 @@ function timeAgo(iso?: string) {
   return `hace ${Math.floor(h / 24)}d`;
 }
 
+const categoryColors: Record<string, string> = {
+  sistema: 'text-blue-400',
+  datos: 'text-amber-400',
+  integracion: 'text-purple-400',
+  monitoreo: 'text-cyan-400',
+};
+
+const priorityOrder: Record<string, number> = { critica: 0, alta: 1, media: 2, baja: 3 };
+
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
   const { agents } = useSupabaseAgents();
+  const queryClient = useQueryClient();
+  const [taskFilter, setTaskFilter] = useState<string>('all');
 
   const { data: agent } = useQuery({
     queryKey: ['agent', id],
