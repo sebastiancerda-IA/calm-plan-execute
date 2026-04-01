@@ -1,83 +1,93 @@
 
 
-# Plan: Preparación Pre-RAG + Mejoras Ejecutables Ahora
+# Plan: Asesor Financiero IA + Backend n8n/Railway Ready
 
-## Estado Actual del Sistema
+## Dos entregables principales
 
-| Tabla | Registros | Estado |
-|---|---|---|
-| agents | 22 | ✅ Poblada |
-| alerts | 13 | ✅ Poblada |
-| executions | 10 | ✅ Con datos |
-| rag_documents | 63 | ✅ Base lista |
-| cna_criteria | 16 | ✅ Los 16 criterios |
-| agent_tasks | 23 | ✅ Tareas asignadas |
-| convenios | 0 | ⏳ Esperando carga |
-| financial_records | 0 | ⏳ Esperando carga mañana |
-| institutional_metrics | 15 | ✅ KPIs base |
-| otec_programs | 8 | ✅ Programas |
+---
 
-## Lo que podemos hacer AHORA (antes del RAG a las 18hrs)
+## 1. Edge Function `financial-advisor` — Super Chatbot Financiero
 
-### Bloque 1 — Notificaciones Push + Alertas Inteligentes (~3 créditos)
-El sistema detecta alertas pero no avisa proactivamente. Implementar:
-- **Centro de notificaciones** en el TopBar: campana con badge de count, dropdown con las últimas 10 alertas sin resolver
-- **Notificaciones nativas del navegador** (Web Notification API): pedir permiso al login, disparar cuando llega alerta crítica via realtime
-- **Resumen diario automático**: widget en dashboard que muestra "Hoy: X alertas, Y ejecuciones, Z documentos nuevos" — se calcula client-side desde los datos existentes
+Nueva edge function con el mismo patrón de streaming SSE del `acreditation-advisor`, pero con personalidad de **analista financiero experto**.
 
-### Bloque 2 — Dashboard de Agentes Mejorado (~3 créditos)
-La página `/agents` es una lista. Convertirla en un panel de control operativo:
-- **Vista Grid/List toggle**: grid con cards grandes mostrando último run, items procesados, error rate con sparkline
-- **Filtros rápidos**: por estado (activo/error/futuro), por área (académica/administrativa/acreditación)
-- **Indicador de salud**: semáforo por agente basado en error_rate y tiempo desde last_run
-- **Acción rápida**: botón "Forzar ejecución" que llama al orchestrator-api con `add_execution`
+### System prompt especializado
+- Experto en finanzas de instituciones de educación superior chilenas
+- Conocimiento de normativa tributaria chilena (SII, IVA, renta)
+- Estrategia de negocios, inversiones, flujo de caja, sostenibilidad
+- Análisis de estructura de costos educacionales
+- Proyecciones financieras y escenarios
+- Contexto dinámico: lee `financial_records`, `institutional_metrics`, `otec_programs` (revenue) en cada request
 
-### Bloque 3 — Página de Inicio / Onboarding (~2 créditos)
-Cuando un usuario nuevo entra, no sabe qué está viendo. Crear:
-- **Welcome card** en dashboard para usuarios nuevos (primer login): explica qué es La Orquesta, qué puede hacer
-- **Tour guiado** con tooltips en los elementos clave (3-4 pasos máximo)
-- **Quick stats** personalizados por rol: director ve finanzas primero, staff ve tareas
+### Modos del chatbot
+- **Analista**: constructivo, propone estrategias de optimización
+- **Auditor**: riguroso, busca inconsistencias y riesgos
 
-### Bloque 4 — Exportación y Reportes (~2 créditos)
-Para que cuando lleguen los datos del RAG se puedan sacar reportes inmediatamente:
-- **Botón exportar CSV** en cada tabla (agentes, alertas, ejecuciones, convenios)
-- **Reporte de estado del sistema** exportable: JSON/PDF con snapshot de todos los KPIs
-- **Historial de ejecuciones** con gráfico de timeline (últimas 24h, 7d, 30d) usando recharts
+### Contexto dinámico inyectado
+- Todos los `financial_records` (ingresos/gastos por período)
+- Métricas institucionales (matrículas, retención)
+- Revenue de programas OTEC activos
+- Balance, márgenes calculados server-side
 
-### Bloque 5 — Preparación para recibir RAG (~2 créditos)
-Optimizar la infraestructura para que cuando cargues los documentos todo funcione al instante:
-- **Auto-refresh en /acreditacion**: suscripción realtime a `rag_documents` para que aparezcan sin recargar (ya preparado pero necesita polish)
-- **Contador en vivo en el sidebar**: badge con total de documentos RAG que se actualiza en realtime
-- **Endpoint `orchestrator-api` optimizado**: agregar acción `bulk_rag_docs` para cargar múltiples documentos en una sola llamada desde Claude Code
-- **Vista previa de documento**: al hacer click en un doc RAG, mostrar metadata expandida (chunks, criterios vinculados, resumen si existe)
+### Seguridad
+- Valida JWT del usuario
+- Verifica rol `director` o `dg` via `user_roles` antes de responder
+- Si no tiene rol autorizado, retorna 403
+
+---
+
+## 2. UI del Chat Financiero en `/finanzas`
+
+### Tabs en la página Finanzas
+- **Dashboard** (actual): KPIs, tabla ingresos/gastos
+- **Consultar Asesor**: Chat streaming con el bot financiero
+
+### Componentes del chat
+- Selector de modo: Analista / Auditor
+- Chips de consultas sugeridas:
+  - "¿Cuál es nuestra estructura de costos?"
+  - "Proyección de flujo de caja a 6 meses"
+  - "¿Cómo optimizar el margen operativo?"
+  - "Análisis de rentabilidad por programa OTEC"
+  - "Riesgos tributarios actuales"
+- Badge de contexto: "X registros financieros cargados"
+- Markdown rendering con `react-markdown`
+
+---
+
+## 3. Preparación Backend para n8n + Railway
+
+### Endpoint `orchestrator-api` — nuevas acciones
+- `get_financial_summary`: Devuelve resumen agregado (totales por período, balance, margen) — listo para que n8n lo consuma
+- `get_system_health`: Estado de salud de todos los agentes + últimas ejecuciones — para monitoring desde Railway
+
+### Estructura para sincronización n8n → Orquesta
+El `n8n-webhook` ya existe. Se agregan validaciones para nuevos event types:
+- `financial_sync`: para cuando n8n envíe datos financieros desde Google Sheets
+- `otec_sync`: para sincronizar programas OTEC
+
+### Documentación en Settings
+En el panel n8n de `/settings`, agregar sección con los payloads de ejemplo para:
+- Sincronización financiera
+- Sincronización OTEC
+- Health check desde Railway
+
+---
 
 ## Archivos a crear/modificar
 
-| Archivo | Cambio |
+| Archivo | Acción |
 |---|---|
-| `src/components/layout/TopBar.tsx` | Centro de notificaciones con campana |
-| `src/hooks/useNotifications.ts` | Crear — permisos + dispatch de Web Notifications |
-| `src/pages/AgentsList.tsx` | Grid view, filtros, semáforo de salud |
-| `src/components/dashboard/WelcomeCard.tsx` | Crear — onboarding para usuarios nuevos |
-| `src/components/shared/ExportButton.tsx` | Crear — componente reutilizable CSV export |
-| `src/pages/RAGExplorer.tsx` | Vista previa expandida de documentos |
-| `src/components/layout/AppSidebar.tsx` | Badge RAG count en sidebar |
-| `supabase/functions/orchestrator-api/index.ts` | Acción `bulk_rag_docs` |
+| `supabase/functions/financial-advisor/index.ts` | Crear — chatbot financiero con streaming SSE |
+| `src/pages/Finanzas.tsx` | Agregar tabs Dashboard/Asesor + chat UI |
+| `supabase/functions/orchestrator-api/index.ts` | Agregar `get_financial_summary` y `get_system_health` |
+| `supabase/functions/n8n-webhook/index.ts` | Agregar handlers `financial_sync` y `otec_sync` |
+| `src/pages/Settings.tsx` | Agregar ejemplos de payloads n8n financieros |
 
-## Recomendación de ejecución
-
-Sugiero implementar en este orden:
-1. **Bloque 5** primero — deja todo listo para las 18hrs
-2. **Bloque 1** — notificaciones para que cuando lleguen datos lo veas
-3. **Bloque 2** — panel de agentes operativo
-4. **Bloque 4** — exportación lista para cuando haya datos reales
-5. **Bloque 3** — onboarding al final, pulido
-
-**Total estimado: ~12 créditos**
-
-## Qué queda para DESPUÉS de las 18hrs (cuando llegue el RAG)
-- Conectar datos reales a gráficos financieros
-- Activar el bot asesor con contexto real de acreditación
-- Generar el primer reporte automatizado de brechas CNA
-- Vincular documentos RAG con criterios específicos automáticamente
+## Notas Técnicas
+- `financial-advisor` usa `LOVABLE_API_KEY` (ya disponible) con `google/gemini-3-flash-preview`
+- Seguridad: valida JWT + consulta `user_roles` con service role key antes de procesar
+- El chat reutiliza el mismo patrón de streaming SSE del `acreditation-advisor`
+- No se agregan dependencias — `react-markdown` ya está instalado
+- Railway se conecta via los mismos endpoints HTTP del orchestrator-api (X-Api-Key auth)
+- Estimado: ~5 créditos
 
