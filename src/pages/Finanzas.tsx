@@ -4,12 +4,13 @@ import { MetricTile } from '@/components/shared/MetricTile';
 import { useInstitutionalMetrics } from '@/hooks/useInstitutionalMetrics';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles, Cpu } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles, Cpu, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { exportFinancialRecords } from '@/lib/exportUtils';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -310,6 +311,17 @@ export default function Finanzas() {
         </TabsList>
 
         <TabsContent value="dashboard">
+          {/* Export button */}
+          {records.length > 0 && (
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => exportFinancialRecords(records)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
+              >
+                <Download size={12} /> Exportar CSV
+              </button>
+            </div>
+          )}
           {/* KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <MetricTile

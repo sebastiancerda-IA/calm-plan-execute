@@ -1,7 +1,7 @@
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Handshake, Plus, FileText, Building2, Search, Filter } from 'lucide-react';
+import { Handshake, Plus, FileText, Building2, Search, Filter, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import type { TablesInsert } from '@/integrations/supabase/types';
+import { exportConvenios } from '@/lib/exportUtils';
 
 type ConvenioInsert = TablesInsert<'convenios'>;
 
@@ -234,9 +235,19 @@ export default function Convenios() {
           <Handshake size={22} /> Convenios Institucionales
         </h1>
         {isDirector && (
-          <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-            <Plus size={14} /> Nuevo Convenio
-          </Button>
+          <div className="flex items-center gap-2">
+            {convenios.length > 0 && (
+              <button
+                onClick={() => exportConvenios(convenios)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
+              >
+                <Download size={12} /> Exportar
+              </button>
+            )}
+            <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
+              <Plus size={14} /> Nuevo Convenio
+            </Button>
+          </div>
         )}
       </div>
 

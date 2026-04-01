@@ -11,6 +11,7 @@ const ActionCenter = lazy(() => import('@/components/dashboard/ActionCenter').th
 const InfraFooter = lazy(() => import('@/components/dashboard/InfraFooter').then(m => ({ default: m.InfraFooter })));
 const PulseWidget = lazy(() => import('@/components/dashboard/PulseWidget').then(m => ({ default: m.PulseWidget })));
 const DataChecklist = lazy(() => import('@/components/dashboard/DataChecklist').then(m => ({ default: m.DataChecklist })));
+const DashboardAnalytics = lazy(() => import('@/components/dashboard/DashboardAnalytics').then(m => ({ default: m.DashboardAnalytics })));
 
 function WidgetFallback() {
   return <div className="rounded-lg border border-border bg-card animate-pulse h-24" />;
@@ -35,6 +36,9 @@ function DashboardInner() {
           <PulseWidget />
         </Suspense>
       )}
+      <Suspense fallback={<WidgetFallback />}>
+        <DashboardAnalytics />
+      </Suspense>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {w.activityFeed && (
           <Suspense fallback={<WidgetFallback />}>

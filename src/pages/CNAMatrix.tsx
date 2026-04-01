@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentBadge } from '@/components/shared/AgentBadge';
 import { ChevronDown, ChevronRight, AlertTriangle, Download, FileText, Plus } from 'lucide-react';
+import { exportCNAMatrix } from '@/lib/exportUtils';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
@@ -24,22 +25,7 @@ const milestones = [
   { label: 'Visita CNA', date: 'Mar 2027', pct: 0 },
 ];
 
-function exportCSV(dimensions: any[]) {
-  const rows = [['ID', 'Nombre', 'Dimensión', 'Nivel Actual', 'Nivel Meta', 'Brecha', 'Evidencias', 'Acciones']];
-  dimensions.forEach((dim) => {
-    dim.criteria.forEach((c: any) => {
-      rows.push([c.id, c.name, dim.name, c.currentLevel, c.targetLevel, c.gap || '', String(c.evidenceCount), (c.actions || []).join('; ')]);
-    });
-  });
-  const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'cna_matrix_export.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// exportCSV replaced by shared exportCNAMatrix from lib/exportUtils
 
 // ─── Evidence Docs per Criterion ─────────────────────────
 function CriterionEvidenceDocs({ criterionId, isDirector }: { criterionId: string; isDirector: boolean }) {
@@ -143,7 +129,7 @@ export default function CNAMatrix() {
         <h1 className="text-xl font-semibold text-foreground">CNA Matrix</h1>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => exportCSV(dimensions)}
+            onClick={() => exportCNAMatrix(dimensions)}
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
           >
             <Download size={12} />
