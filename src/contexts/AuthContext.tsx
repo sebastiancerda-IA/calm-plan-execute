@@ -33,36 +33,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up listener FIRST, but don't set loading=false from INITIAL_SESSION
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION') {
-        // Handled by getSession below
-        return;
-      }
+    let mounted = true;
+
+    // 1. Set up listener FIRST for subsequent auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
-      // For sign in/out events, update loading
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        setLoading(false);
-      }
     });
 
-    // Then restore session from storage
+    // 2. Then restore session — this resolves AFTER onAuthStateChange fires INITIAL_SESSION
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const role = getRoleFromEmail(user?.email);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
   }, []);
 
   return (
