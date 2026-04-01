@@ -43,6 +43,45 @@
     --sidebar-border: 215 19% 15%;
     --sidebar-ring: 210 100% 52%;
   }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 210 100% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 93%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 20% 93%;
+    --muted-foreground: 215 14% 45%;
+
+    --accent: 210 20% 93%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 85%;
+    --input: 214 20% 85%;
+    --ring: 210 100% 45%;
+
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 215 14% 40%;
+    --sidebar-primary: 210 100% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 93%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 210 100% 45%;
+  }
 }
 
 @layer base {
@@ -64,4 +103,14 @@
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+}
+
+@keyframes procesando-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes skeleton-bar {
+  0% { transform: scaleY(0.4); opacity: 0.3; }
+  100% { transform: scaleY(1); opacity: 0.7; }
 }

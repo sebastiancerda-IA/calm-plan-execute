@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockAgents } from '@/data/mockAgents';
 import { StatusDot } from '@/components/shared/StatusDot';
@@ -16,9 +16,10 @@ interface AgentNodeProps {
   agent: (typeof mockAgents)[0];
   hovered: string | null;
   onHover: (id: string | null) => void;
+  nodeRef: (el: HTMLDivElement | null) => void;
 }
 
-function AgentNode({ agent, hovered, onHover }: AgentNodeProps) {
+function AgentNode({ agent, hovered, onHover, nodeRef }: AgentNodeProps) {
   const navigate = useNavigate();
   const isHighlighted =
     !hovered ||
@@ -28,11 +29,14 @@ function AgentNode({ agent, hovered, onHover }: AgentNodeProps) {
 
   return (
     <div
-      className="rounded-md border border-[#1E293B] bg-[#111827] p-3 cursor-pointer transition-all duration-200 hover:border-[#3B82F6]"
+      ref={nodeRef}
+      data-agent-id={agent.id}
+      className="rounded-md border border-border bg-card p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
       style={{
         borderLeftWidth: 4,
         borderLeftColor: agent.color,
         opacity: hovered && !isHighlighted ? 0.3 : 1,
+        boxShadow: hovered === agent.id ? `0 0 16px ${agent.color}30` : 'none',
       }}
       onMouseEnter={() => onHover(agent.id)}
       onMouseLeave={() => onHover(null)}
@@ -44,8 +48,8 @@ function AgentNode({ agent, hovered, onHover }: AgentNodeProps) {
         </span>
         <StatusDot status={agent.status} size={6} />
       </div>
-      <div className="text-xs text-[#F1F5F9] font-medium truncate mb-1">{agent.name}</div>
-      <div className="flex items-center justify-between text-[10px] text-[#6B7280]">
+      <div className="text-xs text-foreground font-medium truncate mb-1">{agent.name}</div>
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
         <span>{timeAgo(agent.lastRun)}</span>
         <span className="font-mono">{agent.itemsProcessed24h} items</span>
       </div>
@@ -55,6 +59,9 @@ function AgentNode({ agent, hovered, onHover }: AgentNodeProps) {
 
 export function AgentMap() {
   const [hovered, setHovered] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [lines, setLines] = useState<{ x1: number; y1: number; x2: number; y2: number; fromId: string; toId: string }[]>([]);
 
   const { dios, operatives, transversals, infra } = useMemo(() => {
     const dios = mockAgents.filter((a) => a.code === 'DIOS');
@@ -66,47 +73,98 @@ export function AgentMap() {
     return { dios, operatives, transversals, infra };
   }, []);
 
+  const calcLines = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const cRect = container.getBoundingClientRect();
+    const newLines: typeof lines = [];
+
+    mockAgents.forEach((agent) => {
+      agent.dependencies.forEach((depId) => {
+        const fromEl = nodeRefs.current.get(agent.id);
+        const toEl = nodeRefs.current.get(depId);
+        if (!fromEl || !toEl) return;
+        const fRect = fromEl.getBoundingClientRect();
+        const tRect = toEl.getBoundingClientRect();
+        newLines.push({
+          x1: fRect.left + fRect.width / 2 - cRect.left,
+          y1: fRect.top - cRect.top,
+          x2: tRect.left + tRect.width / 2 - cRect.left,
+          y2: tRect.top + tRect.height - cRect.top,
+          fromId: agent.id,
+          toId: depId,
+        });
+      });
+    });
+    setLines(newLines);
+  }, []);
+
+  useEffect(() => {
+    calcLines();
+    const ro = new ResizeObserver(calcLines);
+    if (containerRef.current) ro.observe(containerRef.current);
+    window.addEventListener('resize', calcLines);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', calcLines);
+    };
+  }, [calcLines]);
+
+  const setNodeRef = useCallback((id: string) => (el: HTMLDivElement | null) => {
+    if (el) nodeRefs.current.set(id, el);
+    else nodeRefs.current.delete(id);
+  }, []);
+
   return (
-    <div className="rounded-md border border-[#1E293B] bg-[#0D1321] p-4">
-      <h3 className="text-xs text-[#6B7280] uppercase tracking-wider font-medium mb-4">
+    <div ref={containerRef} className="rounded-md border border-border bg-[#0D1321] p-4 relative">
+      <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-4">
         Mapa de Agentes
       </h3>
 
-      <div className="space-y-4">
+      {/* SVG Connection Lines */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
+        {lines.map((line, i) => {
+          const isActive = hovered && (hovered === line.fromId || hovered === line.toId);
+          const midY = (line.y1 + line.y2) / 2;
+          return (
+            <path
+              key={i}
+              d={`M ${line.x1} ${line.y1} Q ${line.x1} ${midY} ${(line.x1 + line.x2) / 2} ${midY} Q ${line.x2} ${midY} ${line.x2} ${line.y2}`}
+              fill="none"
+              stroke={isActive ? '#3B82F6' : 'hsl(215 19% 17%)'}
+              strokeWidth={isActive ? 2 : 1}
+              opacity={hovered && !isActive ? 0.15 : isActive ? 0.8 : 0.4}
+              className="transition-all duration-200"
+            />
+          );
+        })}
+      </svg>
+
+      <div className="space-y-4 relative z-10">
         {/* Nivel 0: Agente Dios */}
         <div className="flex justify-center">
           <div className="w-full max-w-xs">
             {dios.map((a) => (
-              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} />
+              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
             ))}
           </div>
-        </div>
-
-        {/* Connector line */}
-        <div className="flex justify-center">
-          <div className="w-px h-4 bg-[#1E293B]" />
         </div>
 
         {/* Nivel 1: Operativos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           {operatives.map((a) => (
-            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} />
+            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
           ))}
-        </div>
-
-        {/* Connector line */}
-        <div className="flex justify-center">
-          <div className="w-px h-4 bg-[#1E293B]" />
         </div>
 
         {/* Nivel 2: Transversales + Infra */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {transversals.map((a) => (
-            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} />
+            <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
           ))}
           <div className="col-span-2 grid grid-cols-2 gap-2">
             {infra.map((a) => (
-              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} />
+              <AgentNode key={a.id} agent={a} hovered={hovered} onHover={setHovered} nodeRef={setNodeRef(a.id)} />
             ))}
           </div>
         </div>
