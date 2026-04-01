@@ -1,93 +1,50 @@
 
 
-# Plan: Asesor Financiero IA + Backend n8n/Railway Ready
+# Plan: Selector de Modelo de IA en Chatbots
 
-## Dos entregables principales
+## Qué se hace
 
----
+Agregar un selector de modelo de lenguaje en los chatbots de Finanzas y Acreditación. El usuario elige qué modelo usar para cada conversación.
 
-## 1. Edge Function `financial-advisor` — Super Chatbot Financiero
+## Modelos disponibles
 
-Nueva edge function con el mismo patrón de streaming SSE del `acreditation-advisor`, pero con personalidad de **analista financiero experto**.
+| Etiqueta UI | Model ID | Notas |
+|---|---|---|
+| Gemini Flash (rápido) | `google/gemini-3-flash-preview` | Default, balance velocidad/calidad |
+| Gemini Pro (profundo) | `google/gemini-2.5-pro` | Razonamiento complejo, más lento |
+| GPT-5 (potente) | `openai/gpt-5` | Máxima precisión, más costoso |
+| GPT-5 Mini (ágil) | `openai/gpt-5-mini` | Buen balance costo/rendimiento |
 
-### System prompt especializado
-- Experto en finanzas de instituciones de educación superior chilenas
-- Conocimiento de normativa tributaria chilena (SII, IVA, renta)
-- Estrategia de negocios, inversiones, flujo de caja, sostenibilidad
-- Análisis de estructura de costos educacionales
-- Proyecciones financieras y escenarios
-- Contexto dinámico: lee `financial_records`, `institutional_metrics`, `otec_programs` (revenue) en cada request
+Todos pasan por el mismo Lovable AI Gateway — no requieren API keys adicionales.
 
-### Modos del chatbot
-- **Analista**: constructivo, propone estrategias de optimización
-- **Auditor**: riguroso, busca inconsistencias y riesgos
+## Cambios
 
-### Contexto dinámico inyectado
-- Todos los `financial_records` (ingresos/gastos por período)
-- Métricas institucionales (matrículas, retención)
-- Revenue de programas OTEC activos
-- Balance, márgenes calculados server-side
+### 1. Edge Functions (backend)
+- **`financial-advisor/index.ts`**: Aceptar campo `model` del body JSON. Usar como parámetro en la llamada al gateway en vez del hardcoded `google/gemini-3-flash-preview`. Validar contra lista blanca de modelos permitidos.
+- **`cna-advisor/index.ts`**: Mismo cambio — aceptar `model` opcional.
+- **`acreditation-advisor/index.ts`**: Si existe chat streaming, mismo patrón.
 
-### Seguridad
-- Valida JWT del usuario
-- Verifica rol `director` o `dg` via `user_roles` antes de responder
-- Si no tiene rol autorizado, retorna 403
+### 2. Frontend
+- **`Finanzas.tsx`**: Agregar un `Select` dropdown junto al selector de modo (Analista/Auditor) para elegir modelo. Enviar `model` en el body del fetch.
+- **`Acreditacion.tsx`**: Mismo selector en el chat del asesor CNA.
 
----
+### 3. UX
+- Selector compacto tipo chip/dropdown al lado del modo
+- Tooltip en cada opción explicando trade-off (velocidad vs profundidad)
+- El modelo seleccionado se persiste en `localStorage` por sección
 
-## 2. UI del Chat Financiero en `/finanzas`
+## Archivos a modificar
 
-### Tabs en la página Finanzas
-- **Dashboard** (actual): KPIs, tabla ingresos/gastos
-- **Consultar Asesor**: Chat streaming con el bot financiero
-
-### Componentes del chat
-- Selector de modo: Analista / Auditor
-- Chips de consultas sugeridas:
-  - "¿Cuál es nuestra estructura de costos?"
-  - "Proyección de flujo de caja a 6 meses"
-  - "¿Cómo optimizar el margen operativo?"
-  - "Análisis de rentabilidad por programa OTEC"
-  - "Riesgos tributarios actuales"
-- Badge de contexto: "X registros financieros cargados"
-- Markdown rendering con `react-markdown`
-
----
-
-## 3. Preparación Backend para n8n + Railway
-
-### Endpoint `orchestrator-api` — nuevas acciones
-- `get_financial_summary`: Devuelve resumen agregado (totales por período, balance, margen) — listo para que n8n lo consuma
-- `get_system_health`: Estado de salud de todos los agentes + últimas ejecuciones — para monitoring desde Railway
-
-### Estructura para sincronización n8n → Orquesta
-El `n8n-webhook` ya existe. Se agregan validaciones para nuevos event types:
-- `financial_sync`: para cuando n8n envíe datos financieros desde Google Sheets
-- `otec_sync`: para sincronizar programas OTEC
-
-### Documentación en Settings
-En el panel n8n de `/settings`, agregar sección con los payloads de ejemplo para:
-- Sincronización financiera
-- Sincronización OTEC
-- Health check desde Railway
-
----
-
-## Archivos a crear/modificar
-
-| Archivo | Acción |
+| Archivo | Cambio |
 |---|---|
-| `supabase/functions/financial-advisor/index.ts` | Crear — chatbot financiero con streaming SSE |
-| `src/pages/Finanzas.tsx` | Agregar tabs Dashboard/Asesor + chat UI |
-| `supabase/functions/orchestrator-api/index.ts` | Agregar `get_financial_summary` y `get_system_health` |
-| `supabase/functions/n8n-webhook/index.ts` | Agregar handlers `financial_sync` y `otec_sync` |
-| `src/pages/Settings.tsx` | Agregar ejemplos de payloads n8n financieros |
+| `supabase/functions/financial-advisor/index.ts` | Aceptar `model` del request, validar whitelist |
+| `supabase/functions/cna-advisor/index.ts` | Aceptar `model` del request |
+| `src/pages/Finanzas.tsx` | Agregar selector de modelo + enviar en request |
+| `src/pages/Acreditacion.tsx` | Agregar selector de modelo + enviar en request |
 
 ## Notas Técnicas
-- `financial-advisor` usa `LOVABLE_API_KEY` (ya disponible) con `google/gemini-3-flash-preview`
-- Seguridad: valida JWT + consulta `user_roles` con service role key antes de procesar
-- El chat reutiliza el mismo patrón de streaming SSE del `acreditation-advisor`
-- No se agregan dependencias — `react-markdown` ya está instalado
-- Railway se conecta via los mismos endpoints HTTP del orchestrator-api (X-Api-Key auth)
-- Estimado: ~5 créditos
+- Whitelist de modelos validada server-side para evitar inyección
+- Default sigue siendo `google/gemini-3-flash-preview` si no se envía modelo
+- No requiere secrets nuevos — todos los modelos usan `LOVABLE_API_KEY`
+- Estimado: ~2 créditos
 
