@@ -13,8 +13,31 @@ const API_EXAMPLES = [
   { label: 'Lista de agentes', payload: '{ "action": "get_agents" }' },
   { label: 'Criterios CNA', payload: '{ "action": "get_criteria" }' },
   { label: 'Alertas activas', payload: '{ "action": "get_alerts" }' },
+  { label: 'Resumen financiero', payload: '{ "action": "get_financial_summary" }' },
+  { label: 'Salud del sistema', payload: '{ "action": "get_system_health" }' },
   { label: 'Crear alerta', payload: '{ "action": "create_alert", "title": "Test", "priority": "media", "description": "Prueba" }' },
   { label: 'Registrar ejecución', payload: '{ "action": "add_execution", "agent_id": "a1-vcm", "status": "success", "items_processed": 5 }' },
+];
+
+const N8N_SYNC_EXAMPLES = [
+  {
+    label: 'Sync financiero',
+    payload: `{
+  "event_type": "financial_sync",
+  "records": [
+    { "period": "2025-06", "category": "matriculas", "concept": "Matrículas Junio", "amount": 15000000, "record_type": "ingreso" }
+  ]
+}`,
+  },
+  {
+    label: 'Sync OTEC',
+    payload: `{
+  "event_type": "otec_sync",
+  "records": [
+    { "id": "uuid-here", "name": "Curso SENCE Energías Renovables", "type": "curso", "status": "activo", "students_enrolled": 25, "revenue": 3750000 }
+  ]
+}`,
+  },
 ];
 
 const WIDGET_LABELS: Record<string, string> = {
