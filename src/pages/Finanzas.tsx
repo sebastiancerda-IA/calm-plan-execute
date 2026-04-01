@@ -67,7 +67,7 @@ function FinancialChat() {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ messages: allMessages, mode }),
+        body: JSON.stringify({ messages: allMessages, mode, model: selectedModel }),
       });
 
       if (!resp.ok) {
