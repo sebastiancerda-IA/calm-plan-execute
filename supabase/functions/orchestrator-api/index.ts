@@ -248,6 +248,30 @@ serve(async (req) => {
         break;
       }
 
+      case "get_ui_state": {
+        result = {
+          version: "2.4.0",
+          theme: "dark-default",
+          features: [
+            "pwa", "glass-morphism", "financial-advisor", "cna-advisor",
+            "acreditation-advisor", "model-selector", "csv-export",
+            "audit-log", "in-app-notifications", "realtime-rag",
+            "convenios-templates", "rbac", "mobile-nav", "dashboard-analytics",
+          ],
+          edge_functions: [
+            "orchestrator-api", "financial-advisor", "cna-advisor",
+            "acreditation-advisor", "process-document", "n8n-webhook",
+          ],
+          pages: [
+            "/", "/agents", "/alerts", "/acreditacion", "/cna",
+            "/finanzas", "/convenios", "/rag", "/settings", "/install",
+          ],
+          component_count: 45,
+          timestamp: new Date().toISOString(),
+        };
+        break;
+      }
+
       case "get_system_health": {
         const [agRes, exRes, alRes] = await Promise.all([
           supabase.from("agents").select("id, code, name, status, last_run, error_rate, items_processed_24h"),
