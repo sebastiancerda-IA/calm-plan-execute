@@ -381,7 +381,7 @@ function TabAgenteDios() {
             {ragCount > 0 ? `${ragCount} docs en RAG` : 'Sin documentos — respuestas genéricas'}
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setMode('asesor')}
             className={`text-[9px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${
@@ -398,6 +398,28 @@ function TabAgenteDios() {
           >
             <Shield size={10} /> Evaluador Duro
           </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <Cpu size={9} className="text-muted-foreground" />
+                  <Select value={selectedModel} onValueChange={(v) => { setSelectedModel(v); localStorage.setItem('acred_model', v); }}>
+                    <SelectTrigger className="h-6 w-[110px] text-[9px] border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map(m => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          {m.label} — {m.desc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
