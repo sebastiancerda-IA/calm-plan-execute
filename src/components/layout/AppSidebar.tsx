@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Database,
   Settings,
+  GraduationCap,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -23,6 +24,7 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Agentes', url: '/agents', icon: Users },
   { title: 'CNA Matrix', url: '/cna', icon: Shield },
+  { title: 'Acreditación', url: '/acreditacion', icon: GraduationCap },
   { title: 'Alertas', url: '/alerts', icon: AlertTriangle },
   { title: 'RAG Explorer', url: '/rag', icon: Database },
   { title: 'Settings', url: '/settings', icon: Settings },

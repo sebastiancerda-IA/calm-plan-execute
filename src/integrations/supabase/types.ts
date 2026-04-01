@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      acreditation_documents: {
+        Row: {
+          created_at: string | null
+          criterio_cna: string | null
+          dimension: string | null
+          document_type: string
+          file_path: string | null
+          id: string
+          processed: boolean | null
+          summary: string | null
+          title: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          criterio_cna?: string | null
+          dimension?: string | null
+          document_type?: string
+          file_path?: string | null
+          id?: string
+          processed?: boolean | null
+          summary?: string | null
+          title: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          criterio_cna?: string | null
+          dimension?: string | null
+          document_type?: string
+          file_path?: string | null
+          id?: string
+          processed?: boolean | null
+          summary?: string | null
+          title?: string
+          uploaded_at?: string | null
+        }
+        Relationships: []
+      }
       agents: {
         Row: {
           area: string
@@ -271,6 +310,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      institutional_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          metric_key: string
+          metric_text: string | null
+          metric_value: number | null
+          period: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metric_key: string
+          metric_text?: string | null
+          metric_value?: number | null
+          period: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metric_key?: string
+          metric_text?: string | null
+          metric_value?: number | null
+          period?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      otec_programs: {
+        Row: {
+          created_at: string | null
+          empresa: string | null
+          end_date: string | null
+          id: string
+          name: string
+          revenue: number | null
+          sence_code: string | null
+          start_date: string | null
+          status: string
+          students_enrolled: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          empresa?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          revenue?: number | null
+          sence_code?: string | null
+          start_date?: string | null
+          status?: string
+          students_enrolled?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          empresa?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          revenue?: number | null
+          sence_code?: string | null
+          start_date?: string | null
+          status?: string
+          students_enrolled?: number | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       rag_documents: {
         Row: {

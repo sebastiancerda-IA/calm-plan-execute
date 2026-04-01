@@ -50,3 +50,15 @@ export const ragService = {
 export const systemMetricsService = {
   getAll: () => supabase.from('system_metrics').select('*'),
 };
+
+export const institutionalMetricsService = {
+  getAll: () => supabase.from('institutional_metrics').select('*').order('period', { ascending: false }),
+};
+
+export const otecProgramsService = {
+  getAll: () => supabase.from('otec_programs').select('*').order('start_date', { ascending: false }),
+};
+
+export const acreditationDocsService = {
+  getAll: () => supabase.from('acreditation_documents').select('*').order('uploaded_at', { ascending: false }),
+};

@@ -1,0 +1,115 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+function timeAgo(iso: string) {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
+  if (h < 1) return 'hace <1h';
+  if (h < 24) return `hace ${h}h`;
+  return `hace ${Math.floor(h / 24)}d`;
+}
+
+interface FeedEvent {
+  id: string;
+  timestamp: string;
+  agentCode: string;
+  agentColor: string;
+  action: string;
+  result: string;
+}
+
+export function ActivityFeedLive() {
+  const { data: events = [] } = useQuery({
+    queryKey: ['activity_feed'],
+    queryFn: async () => {
+      // Fetch recent executions with agent info
+      const { data: executions } = await supabase
+        .from('executions')
+        .select('id, status, started_at, items_processed, agent_id')
+        .order('started_at', { ascending: false })
+        .limit(8);
+
+      const { data: alerts } = await supabase
+        .from('alerts')
+        .select('id, title, priority, created_at, agent_id, resolved')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: agents } = await supabase
+        .from('agents')
+        .select('id, code, color');
+
+      const agentMap: Record<string, { code: string; color: string }> = {};
+      (agents || []).forEach((a: any) => { agentMap[a.id] = { code: a.code, color: a.color }; });
+
+      const feedEvents: FeedEvent[] = [];
+
+      (executions || []).forEach((e: any) => {
+        const agent = agentMap[e.agent_id] || { code: '??', color: '#6B7280' };
+        feedEvents.push({
+          id: `exec-${e.id}`,
+          timestamp: e.started_at,
+          agentCode: agent.code,
+          agentColor: agent.color,
+          action: e.status === 'success'
+            ? `Procesó ${e.items_processed || 0} items`
+            : `Error en ejecución`,
+          result: e.status === 'success' ? 'Éxito' : 'Error',
+        });
+      });
+
+      (alerts || []).forEach((a: any) => {
+        const agent = agentMap[a.agent_id] || { code: '??', color: '#EF4444' };
+        feedEvents.push({
+          id: `alert-${a.id}`,
+          timestamp: a.created_at,
+          agentCode: agent.code,
+          agentColor: a.priority === 'critica' ? '#EF4444' : agent.color,
+          action: `Alerta: ${a.title}`,
+          result: a.resolved ? 'Resuelta' : a.priority === 'critica' ? 'Crítico' : 'Pendiente',
+        });
+      });
+
+      return feedEvents
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 10);
+    },
+    refetchInterval: 60000,
+  });
+
+  return (
+    <div className="rounded-md border border-border bg-card p-4 h-full">
+      <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
+        Actividad Reciente
+      </h3>
+      <div className="space-y-0">
+        {events.map((ev) => (
+          <div key={ev.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+            <div className="mt-1.5 flex-shrink-0">
+              <span
+                className="block w-2 h-2 rounded-full"
+                style={{ backgroundColor: ev.agentColor }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] font-bold" style={{ color: ev.agentColor }}>
+                  {ev.agentCode}
+                </span>
+                <span className="text-xs text-foreground truncate">{ev.action}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">{timeAgo(ev.timestamp)}</span>
+            </div>
+            <span className={`text-[9px] font-mono shrink-0 ${
+              ev.result === 'Error' || ev.result === 'Crítico' ? 'text-destructive' : 'text-muted-foreground'
+            }`}>
+              {ev.result}
+            </span>
+          </div>
+        ))}
+        {events.length === 0 && (
+          <div className="text-xs text-muted-foreground text-center py-4">Sin actividad reciente</div>
+        )}
+      </div>
+    </div>
+  );
+}
