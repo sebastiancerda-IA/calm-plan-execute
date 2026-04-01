@@ -228,12 +228,57 @@ serve(async (req) => {
         break;
       }
 
+      case "get_financial_summary": {
+        const { data: fin } = await supabase.from("financial_records").select("*").order("period");
+        const recs = fin || [];
+        const ing = recs.filter((r: any) => r.record_type === "ingreso");
+        const gas = recs.filter((r: any) => r.record_type === "gasto");
+        const totalIng = ing.reduce((s: number, r: any) => s + Number(r.amount), 0);
+        const totalGas = gas.reduce((s: number, r: any) => s + Number(r.amount), 0);
+        const byPeriod: Record<string, { ingresos: number; gastos: number }> = {};
+        recs.forEach((r: any) => {
+          if (!byPeriod[r.period]) byPeriod[r.period] = { ingresos: 0, gastos: 0 };
+          byPeriod[r.period][r.record_type === "ingreso" ? "ingresos" : "gastos"] += Number(r.amount);
+        });
+        result = {
+          total_ingresos: totalIng, total_gastos: totalGas, balance: totalIng - totalGas,
+          margen_pct: totalIng > 0 ? ((totalIng - totalGas) / totalIng * 100).toFixed(1) : "0",
+          records_count: recs.length, by_period: byPeriod,
+        };
+        break;
+      }
+
+      case "get_system_health": {
+        const [agRes, exRes, alRes] = await Promise.all([
+          supabase.from("agents").select("id, code, name, status, last_run, error_rate, items_processed_24h"),
+          supabase.from("executions").select("*").order("created_at", { ascending: false }).limit(20),
+          supabase.from("alerts").select("id, priority").eq("resolved", false),
+        ]);
+        const agents = agRes.data || [];
+        const errorAgents = agents.filter((a: any) => a.status === "error");
+        result = {
+          agents_total: agents.length,
+          agents_operative: agents.filter((a: any) => a.status === "operativo").length,
+          agents_error: errorAgents.length,
+          error_agents: errorAgents.map((a: any) => a.code),
+          active_alerts: alRes.data?.length || 0,
+          critical_alerts: (alRes.data || []).filter((a: any) => a.priority === "critica").length,
+          recent_executions: exRes.data?.length || 0,
+          health_score: agents.length > 0
+            ? Math.round(((agents.length - errorAgents.length) / agents.length) * 100)
+            : 0,
+          timestamp: new Date().toISOString(),
+        };
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({
           error: `Unknown action: ${action}`,
           available_actions: [
             "get_status", "get_agents", "get_criteria", "get_alerts",
             "get_documents", "get_metrics", "get_tasks", "get_convenios",
+            "get_financial_summary", "get_system_health",
             "update_agent", "create_alert", "add_execution", "add_rag_doc", "update_task",
             "create_financial_record", "bulk_financial_records", "bulk_rag_docs",
           ],

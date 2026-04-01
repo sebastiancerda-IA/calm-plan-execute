@@ -13,8 +13,31 @@ const API_EXAMPLES = [
   { label: 'Lista de agentes', payload: '{ "action": "get_agents" }' },
   { label: 'Criterios CNA', payload: '{ "action": "get_criteria" }' },
   { label: 'Alertas activas', payload: '{ "action": "get_alerts" }' },
+  { label: 'Resumen financiero', payload: '{ "action": "get_financial_summary" }' },
+  { label: 'Salud del sistema', payload: '{ "action": "get_system_health" }' },
   { label: 'Crear alerta', payload: '{ "action": "create_alert", "title": "Test", "priority": "media", "description": "Prueba" }' },
   { label: 'Registrar ejecución', payload: '{ "action": "add_execution", "agent_id": "a1-vcm", "status": "success", "items_processed": 5 }' },
+];
+
+const N8N_SYNC_EXAMPLES = [
+  {
+    label: 'Sync financiero',
+    payload: `{
+  "event_type": "financial_sync",
+  "records": [
+    { "period": "2025-06", "category": "matriculas", "concept": "Matrículas Junio", "amount": 15000000, "record_type": "ingreso" }
+  ]
+}`,
+  },
+  {
+    label: 'Sync OTEC',
+    payload: `{
+  "event_type": "otec_sync",
+  "records": [
+    { "id": "uuid-here", "name": "Curso SENCE Energías Renovables", "type": "curso", "status": "activo", "students_enrolled": 25, "revenue": 3750000 }
+  ]
+}`,
+  },
 ];
 
 const WIDGET_LABELS: Record<string, string> = {
@@ -196,6 +219,21 @@ function N8NPanel() {
           </button>
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">El resultado aparecerá en tiempo real en el Dashboard</p>
+      </div>
+      {/* n8n Sync payloads */}
+      <div className="border-t border-border pt-3">
+        <span className="text-[10px] text-muted-foreground block mb-2">Payloads de sincronización n8n (enviar al webhook URL)</span>
+        <div className="grid grid-cols-1 gap-2">
+          {N8N_SYNC_EXAMPLES.map((ex) => (
+            <div key={ex.label} className="bg-secondary rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] text-muted-foreground font-medium">{ex.label}</span>
+                <CopyButton text={ex.payload} />
+              </div>
+              <code className="text-[10px] text-foreground font-mono block whitespace-pre-wrap break-all">{ex.payload}</code>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

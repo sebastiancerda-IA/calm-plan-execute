@@ -13,7 +13,38 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { agent_id, status, items_processed, error_message, duration_ms, workflow_id } = body
+    const { agent_id, status, items_processed, error_message, duration_ms, workflow_id, event_type, records } = body
+
+    // Handle financial_sync event
+    if (event_type === 'financial_sync') {
+      if (!Array.isArray(records) || records.length === 0) {
+        return new Response(JSON.stringify({ error: 'records array required for financial_sync' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const { data, error } = await supabase.from('financial_records').insert(records).select()
+      if (error) throw error
+      return new Response(JSON.stringify({ ok: true, synced: data?.length || 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Handle otec_sync event
+    if (event_type === 'otec_sync') {
+      if (!Array.isArray(records) || records.length === 0) {
+        return new Response(JSON.stringify({ error: 'records array required for otec_sync' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      // Upsert by name
+      for (const r of records) {
+        const { error } = await supabase.from('otec_programs').upsert(r, { onConflict: 'id' })
+        if (error) console.error('otec upsert error:', error)
+      }
+      return new Response(JSON.stringify({ ok: true, synced: records.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     if (!agent_id || !status) {
       return new Response(JSON.stringify({ error: 'agent_id and status required' }), {
