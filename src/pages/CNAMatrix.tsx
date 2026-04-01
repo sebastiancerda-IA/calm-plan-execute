@@ -25,22 +25,7 @@ const milestones = [
   { label: 'Visita CNA', date: 'Mar 2027', pct: 0 },
 ];
 
-function exportCSV(dimensions: any[]) {
-  const rows = [['ID', 'Nombre', 'Dimensión', 'Nivel Actual', 'Nivel Meta', 'Brecha', 'Evidencias', 'Acciones']];
-  dimensions.forEach((dim) => {
-    dim.criteria.forEach((c: any) => {
-      rows.push([c.id, c.name, dim.name, c.currentLevel, c.targetLevel, c.gap || '', String(c.evidenceCount), (c.actions || []).join('; ')]);
-    });
-  });
-  const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'cna_matrix_export.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// exportCSV replaced by shared exportCNAMatrix from lib/exportUtils
 
 // ─── Evidence Docs per Criterion ─────────────────────────
 function CriterionEvidenceDocs({ criterionId, isDirector }: { criterionId: string; isDirector: boolean }) {
