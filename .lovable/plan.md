@@ -1,50 +1,38 @@
 
 
-# Plan: Selector de Modelo de IA en Chatbots
+# Plan: Status Update para Claude Code + Sync GitHub
 
-## Qué se hace
+## Dos entregables
 
-Agregar un selector de modelo de lenguaje en los chatbots de Finanzas y Acreditación. El usuario elige qué modelo usar para cada conversación.
+### 1. Documento de Status Update para Claude Code
+Generar un archivo markdown completo en `/mnt/documents/` con el estado actual del sistema para que Claude Code tenga contexto total. Incluye:
 
-## Modelos disponibles
+- **Arquitectura completa**: 14 páginas, 6 edge functions, 13 tablas, 3 enums, RBAC con `has_role()`
+- **Schema de cada tabla** con columnas y tipos exactos
+- **Orchestrator API**: las 18 acciones disponibles con payloads de ejemplo
+- **Edge Functions**: `cna-advisor`, `financial-advisor`, `acreditation-advisor`, `n8n-webhook`, `orchestrator-api`, `process-document`
+- **Selector de modelos IA**: 4 modelos disponibles (Gemini Flash, Gemini Pro, GPT-5, GPT-5 Mini)
+- **RLS y seguridad**: roles `director`, `dg`, `staff` + función `has_role()`
+- **Estado de datos**: qué tablas tienen datos y cuáles esperan carga
+- **Endpoints y payloads** para integración n8n/Railway
+- **Lo que falta**: datos financieros, convenios, documentos RAG reales, conexión n8n live
 
-| Etiqueta UI | Model ID | Notas |
-|---|---|---|
-| Gemini Flash (rápido) | `google/gemini-3-flash-preview` | Default, balance velocidad/calidad |
-| Gemini Pro (profundo) | `google/gemini-2.5-pro` | Razonamiento complejo, más lento |
-| GPT-5 (potente) | `openai/gpt-5` | Máxima precisión, más costoso |
-| GPT-5 Mini (ágil) | `openai/gpt-5-mini` | Buen balance costo/rendimiento |
+### 2. Preparación GitHub
+Para dar acceso a Claude Code al repo:
+- El usuario conecta GitHub desde Settings > Connectors > GitHub
+- Se crea un repo que sincroniza bidireccionalmente
+- Claude Code clona el repo y tiene acceso completo al código
+- Combinado con el status document, Claude Code puede analizar todo el ecosistema
 
-Todos pasan por el mismo Lovable AI Gateway — no requieren API keys adicionales.
+## Archivos
 
-## Cambios
-
-### 1. Edge Functions (backend)
-- **`financial-advisor/index.ts`**: Aceptar campo `model` del body JSON. Usar como parámetro en la llamada al gateway en vez del hardcoded `google/gemini-3-flash-preview`. Validar contra lista blanca de modelos permitidos.
-- **`cna-advisor/index.ts`**: Mismo cambio — aceptar `model` opcional.
-- **`acreditation-advisor/index.ts`**: Si existe chat streaming, mismo patrón.
-
-### 2. Frontend
-- **`Finanzas.tsx`**: Agregar un `Select` dropdown junto al selector de modo (Analista/Auditor) para elegir modelo. Enviar `model` en el body del fetch.
-- **`Acreditacion.tsx`**: Mismo selector en el chat del asesor CNA.
-
-### 3. UX
-- Selector compacto tipo chip/dropdown al lado del modo
-- Tooltip en cada opción explicando trade-off (velocidad vs profundidad)
-- El modelo seleccionado se persiste en `localStorage` por sección
-
-## Archivos a modificar
-
-| Archivo | Cambio |
+| Archivo | Acción |
 |---|---|
-| `supabase/functions/financial-advisor/index.ts` | Aceptar `model` del request, validar whitelist |
-| `supabase/functions/cna-advisor/index.ts` | Aceptar `model` del request |
-| `src/pages/Finanzas.tsx` | Agregar selector de modelo + enviar en request |
-| `src/pages/Acreditacion.tsx` | Agregar selector de modelo + enviar en request |
+| `/mnt/documents/claude-code-status-update.md` | Crear — documento exhaustivo con schema, endpoints, estado |
 
-## Notas Técnicas
-- Whitelist de modelos validada server-side para evitar inyección
-- Default sigue siendo `google/gemini-3-flash-preview` si no se envía modelo
-- No requiere secrets nuevos — todos los modelos usan `LOVABLE_API_KEY`
-- Estimado: ~2 créditos
+## Notas
+- El documento se genera como artifact descargable
+- No requiere cambios en el código — es un export de estado
+- Claude Code usará este documento + el repo GitHub + la `orchestrator-api` para interactuar con el sistema
+- Estimado: ~1 crédito
 
