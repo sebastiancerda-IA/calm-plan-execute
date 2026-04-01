@@ -329,6 +329,7 @@ export default function Convenios() {
                   <th className="text-left py-2 px-3">Contraparte</th>
                   <th className="text-left py-2 px-3">Estado</th>
                   <th className="text-left py-2 px-3">Vigencia</th>
+                  <th className="text-left py-2 px-3">Drive</th>
                   <th className="text-left py-2 px-3">CNA</th>
                 </tr>
               </thead>
