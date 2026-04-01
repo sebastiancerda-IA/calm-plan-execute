@@ -1,94 +1,175 @@
 
 
-# La Orquesta IDMA — Mission Control Dashboard
+# Plan: Deep Upgrade — La Orquesta IDMA
 
-## What We're Building
-A 6-page dark-mode mission control dashboard for CFT IDMA's 12-agent AI ecosystem. Dense, institutional, Bloomberg Terminal aesthetic. All mock data, architecture ready for n8n/Qdrant/Sheets integration.
+## Overview
+Implement all 6 blocks of the Deep Upgrade plan across the existing codebase. The plan is split into implementation phases ordered by impact per credit. WhatsApp integration is noted but deferred — it requires a WhatsApp Business API or third-party bridge (like Twilio), which isn't available as a connector yet.
 
-## Implementation Plan
+Regarding WhatsApp: there's no native WhatsApp connector in Lovable. The closest option is Twilio (available as connector), which supports WhatsApp Business API. We could build a notification channel that sends critical alerts via Twilio/WhatsApp. This would be a Block 4 addition once we get the base integrations working.
 
-### Phase 1: Foundation
-**Files: types, theme, mock data, shared components**
+---
 
-1. **`src/types/index.ts`** — All TypeScript interfaces (Agent, ClassifiedEmail, CNACriterion, Alert, RAGDocument, enums)
+## Block 1: Visual Polish (edit ~8 files)
 
-2. **`src/index.css`** — Override CSS variables for dark mode default (#0A0F1C background, #111827 surfaces, #1E293B borders). Import Inter + JetBrains Mono from Google Fonts in `index.html`.
+### 1.1 SVG Connection Lines in AgentMap
+- Refactor `AgentMap.tsx` to use `useRef` on each agent node + a parent container
+- Add an absolutely-positioned `<svg>` overlay that draws quadratic bezier curves between dependent agents
+- Lines default to `#1E293B`, highlight to `#3B82F6` when either endpoint is hovered
+- Use `useLayoutEffect` + `ResizeObserver` to recalculate positions
 
-3. **Mock data files** (5 files):
-   - `src/data/mockAgents.ts` — 12 agents with exact specs (codes, colors, statuses, CNA criteria, dependencies)
-   - `src/data/mockEmails.ts` — 15 classified emails (VCM + OTEC mix, realistic Chilean institutional content)
-   - `src/data/mockCNA.ts` — 16 CNA criteria with dimensions, levels, gaps, actions
-   - `src/data/mockAlerts.ts` — 8 alerts (2 critical, 3 high, 2 medium, 1 info)
-   - `src/data/mockRAG.ts` — Collection stats (51 docs), document list, distribution data
+### 1.2 Framer Motion Page Transitions
+- Edit `App.tsx`: wrap `<Routes>` content with `AnimatePresence`
+- Create a `PageTransition` wrapper component using `motion.div` with fade+slideY (200ms)
+- Apply to each route's element
 
-4. **Service interfaces** (3 files):
-   - `src/services/n8nService.ts` — Mock implementation with TODO comments for real API
-   - `src/services/qdrantService.ts` — Mock with TODO for Railway endpoint
-   - `src/services/sheetsService.ts` — Mock with TODO for Google Sheets API
+### 1.3 Micro-animations
+- **MetricTile.tsx**: Add count-up animation using a simple `useEffect` + `requestAnimationFrame` (no extra library). Numbers animate from 0 to value over 600ms
+- **AgentNode** (in AgentMap): Add `hover:scale-[1.02]` + box-shadow glow using agent color on hover
+- **Loading component** (App.tsx): Replace spinner with 3-bar skeleton pulse
+- **StatusDot.tsx**: Improve pulse animation — use a custom keyframe with scale + opacity for "procesando"
 
-5. **Shared components** (`src/components/shared/`):
-   - `StatusDot.tsx` — 8px circle, pulse animation for "procesando"
-   - `AgentBadge.tsx` — Pill with agent color at 20% opacity, links to /agent/:id
-   - `MetricTile.tsx` — Label + large value + trend arrow + optional Sparkline
-   - `PriorityBadge.tsx` — Color-coded priority badges
-   - `Sparkline.tsx` — SVG inline 60x20px, 7-point line chart
+### 1.4 TopBar Real-time Clock
+- Edit `TopBar.tsx`: Add `useEffect` with `setInterval(60000)` to update time every minute
+- Add "uptime" counter showing time since page load
 
-6. **Custom hooks** (`src/hooks/`):
-   - `useAgentStatus.ts` — Returns agents with computed status info
-   - `useAlerts.ts` — Alerts with filtering
-   - `useCNAProgress.ts` — CNA progress calculations by dimension
+---
 
-### Phase 2: Layout
-**Sidebar + TopBar + routing**
+## Block 2: UX Features (edit/create ~10 files)
 
-7. **`src/components/layout/TopBar.tsx`** — Logo "La Orquesta IDMA" with wave/network icon (Lucide `AudioWaveform` or `Network`), v4.2 badge, pulsing green dot "Sistema activo", current time
+### 2.1 Agents List Page
+- Create `src/pages/AgentsList.tsx` — table/grid of 12 agents with filter chips (by status, area, platform)
+- Add route `/agents` in `App.tsx`
+- Update `AppSidebar.tsx`: "Agentes" links to `/agents`
 
-8. **`src/components/layout/AppSidebar.tsx`** — Using shadcn Sidebar, collapsible to icons. Nav items: Dashboard, Agentes, CNA Matrix, Alertas, RAG Explorer, Settings. Dark styling.
+### 2.2 Dashboard Interactivity
+- **GlobalMetrics.tsx**: Wrap each `MetricTile` in a `Link` — agents→`/agents`, emails→`/agent/a1-vcm`, alerts→`/alerts`, RAG→`/rag`
+- **CNASnapshot.tsx**: Make each cell a `Link` to `/cna?expand=C1` (or whatever ID). CNAMatrix reads URL param to auto-expand
+- **ActivityFeed.tsx**: Add filter dropdown by agent code at top
+- **InfraFooter.tsx**: Add tooltips on each item showing extra detail
 
-9. **`src/components/layout/PageContainer.tsx`** — Wrapper with SidebarProvider, TopBar, content area
+### 2.3 Alerts with localStorage Persistence
+- Refactor `useAlerts.ts`: Track resolved alert IDs in `localStorage`
+- Add `resolveAlert(id)` function that persists to localStorage
+- Add toast notification on resolve (using existing sonner)
+- Add resolved/pending toggle filter in `Alerts.tsx`
 
-10. **`src/App.tsx`** — Routes for all 6 pages with React.lazy for non-Dashboard pages. Framer Motion page transitions.
+### 2.4 RAG Explorer Search Improvements
+- Add `useDebounce` hook (simple 300ms debounce)
+- Auto-search on typing after debounce
+- Highlight matching query text in results with `<mark>` tags
+- Add "thinking" dots animation during search
 
-### Phase 3: Dashboard Page (/)
-**The main view — densest page**
+### 2.5 CNA Matrix Radial Charts
+- Add recharts `PieChart` (donut) per dimension showing at-target vs gap criteria
+- Improve timeline: progress bar between milestones, filled up to current position
 
-11. **`src/components/dashboard/GlobalMetrics.tsx`** — 4 MetricTiles in a row (agents operative 4/12, emails 24h, active alerts, knowledge base)
+---
 
-12. **`src/components/dashboard/AgentMap.tsx`** — The hero component. 12 agent nodes in a structured grid (Dios top, operatives middle, transversals bottom, infra right). SVG connection lines between dependent agents. Lines highlight on hover. Each node shows code, name, status dot, last run, items processed, agent color left border.
+## Block 3: Theme & Responsive (edit ~6 files)
 
-13. **`src/components/dashboard/ActivityFeed.tsx`** — Vertical timeline, 10 recent events with agent colors and timestamps
+### 3.1 Theme Toggle
+- Define `.light` class variables in `index.css` with light palette
+- Create `useTheme` hook with localStorage persistence
+- Settings toggle actually applies/removes `.light` class on `<html>`
 
-14. **`src/components/dashboard/CNASnapshot.tsx`** — 4x4 grid of criteria squares colored by level (N1 red, N2 amber, N3 green), C13/C14 with pulsing red border, tooltips
+### 3.2 Responsive Polish
+- Dashboard grid: verify stacking on mobile (already using responsive classes)
+- Tables: add `overflow-x-auto` wrapper (already present, verify)
+- TopBar: hide date string on `<768px` with `hidden sm:block`
+- AgentMap: 1-column on mobile
 
-15. **`src/components/dashboard/InfraFooter.tsx`** — Horizontal bar: n8n, Qdrant, Jina, Gemini status + monthly cost
+### 3.3 Breadcrumbs
+- Create `Breadcrumbs.tsx` shared component
+- Add to `AgentDetail`, `CNAMatrix`, `Alerts`, `RAGExplorer`, `Settings`
 
-16. **`src/pages/Dashboard.tsx`** — Composes all dashboard components in the specified row layout
+---
 
-### Phase 4: Secondary Pages
+## Block 4: Live Data Connections (create ~4 edge functions)
 
-17. **`src/pages/AgentDetail.tsx`** — Dynamic route, agent header with color/status, metric sparklines, execution table, email classification table (for A1/C1), CNA chips, dependency mini-map
+**Prerequisite: Enable Lovable Cloud first**
 
-18. **`src/pages/CNAMatrix.tsx`** — 4 dimension sections, expandable criterion cards (level, gap, actions, evidence count), dimension progress bars, accreditation timeline (Mar 2026 → Mar 2027)
+### 4.1 n8n API Connection
+- Create edge function `supabase/functions/n8n-proxy/index.ts`
+- Reads `N8N_API_KEY` from secrets
+- Endpoints: GET workflows, GET executions
+- Update `n8nService.ts` to call edge function
 
-19. **`src/pages/Alerts.tsx`** — Priority filters, counter badges (critical pulsing), alert cards with priority border, agent badge, resolve button, action badges
+### 4.2 Qdrant Connection
+- Create edge function `supabase/functions/qdrant-proxy/index.ts`
+- Reads `QDRANT_API_KEY` from secrets
+- Endpoints: collection info, search
+- Update `qdrantService.ts`
 
-20. **`src/pages/RAGExplorer.tsx`** — Stats row (51 docs, Jina gauge, last indexed), agent distribution bar chart (recharts), document table, simulated semantic search with relevance scores, pending Drive folders section
+### 4.3 Google Sheets Connection
+- Create edge function `supabase/functions/sheets-proxy/index.ts`
+- Reads Google credentials from secrets
+- Reads VCM Log and OTEC Log sheets
+- Update `sheetsService.ts`
 
-21. **`src/pages/Settings.tsx`** — Infrastructure status cards, credentials table (names only), cost table, dark/light theme toggle
+### 4.4 Auto-refresh with React Query
+- Configure `queryClient` with `refetchInterval: 300000` (5 min)
+- Add "Última actualización" indicator in TopBar
+- Services return real data when edge functions available, fall back to mock
 
-### Phase 5: Polish
+---
 
-22. **Framer Motion** — Install and add fade+slide transitions (200ms) to page routes
-23. **Responsive** — Sidebar collapses at <1024px, grid stacks at <768px
-24. **Final QA** — Verify all 10 checklist items from the spec
+## Block 5: Authentication (create ~5 files)
 
-## Technical Details
+### 5.1 Login Page
+- Enable Lovable Cloud auth
+- Create `src/pages/Login.tsx` with IDMA branding
+- Add `AuthProvider` context + `ProtectedRoute` wrapper
+- All routes except `/login` are protected
 
-- **New dependency**: `framer-motion` for page transitions
-- **Fonts**: Inter (Google Fonts) for UI, JetBrains Mono for metrics/data — loaded via `<link>` in index.html
-- **Dark mode**: Set as default via CSS variables override in `:root` (not toggled class). Settings page toggle adds `.light` class.
-- **Agent map SVG lines**: Rendered in an absolutely-positioned SVG layer over the agent grid, using computed positions. `useRef` + `useEffect` to calculate node positions.
-- **All colors hardcoded per spec** — not using shadcn theme variables for agent/status colors, those use direct hex values.
-- **recharts** already installed — used for RAG distribution bar chart and dimension progress visualization.
-- **Total new files**: ~35 files across types, data, services, hooks, components, and pages.
+### 5.2 User Profile
+- Create profiles table (if user confirms need)
+- Show user avatar + name in TopBar
+- Logout button
+
+---
+
+## Block 6: Premium Features (create ~4 files)
+
+### 6.1 Command Palette (Cmd+K)
+- Create `src/components/shared/CommandPalette.tsx` using shadcn `Command` + `CommandDialog`
+- Register `Cmd+K` / `Ctrl+K` keyboard shortcut
+- Index: all agents, all CNA criteria, all alert titles, page navigation
+- Navigate on selection
+
+### 6.2 Pulse Heatmap Widget
+- Create `src/components/dashboard/PulseWidget.tsx`
+- 24 blocks (one per hour) colored by activity intensity
+- Uses mock activity data from the last 24h
+- Add to Dashboard between AgentMap and the two-panel row
+
+### 6.3 Export Functions
+- CNA: Button to export criteria table as CSV (client-side `Blob` + download)
+- Alerts: Button to export filtered alerts as CSV
+- No external libraries needed — pure JS CSV generation
+
+### 6.4 Notification Sounds
+- Add a toggle in Settings for notification sounds
+- Play a subtle "ping" sound (base64 encoded, tiny) when a critical alert appears
+- Persist preference in localStorage
+
+---
+
+## Execution Order
+1. Block 1 (Visual Polish) — immediate visual impact
+2. Block 2 (UX Features) — makes app usable
+3. Block 3 (Theme + Responsive) — professional completeness
+4. Block 6.1 (Command Palette) — high glamour, low effort
+5. Block 6.2-6.4 (Pulse, Export, Sounds) — nice polish
+6. Block 4 (Live Data) — requires Lovable Cloud setup
+7. Block 5 (Auth) — requires Lovable Cloud
+
+**Estimated total: ~25 credits across all blocks**
+
+## Technical Notes
+- No new heavy dependencies — `framer-motion` already installed, `recharts` already installed
+- Count-up animation is pure JS (no library)
+- SVG connections use native SVG + React refs (no D3)
+- CSV export is pure client-side Blob
+- All enhancements are lazy-loaded where possible
+- Light theme is additive CSS only (`.light` class override)
 
