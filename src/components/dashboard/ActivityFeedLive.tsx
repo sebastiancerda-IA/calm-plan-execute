@@ -118,16 +118,7 @@ export function ActivityFeedLive() {
     refetchInterval: 60000,
   });
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('feed_rag_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rag_documents' }, (payload) => {
-        toast.info(`📄 Documento indexado en RAG: ${(payload.new as any).titulo}`);
-        queryClient.invalidateQueries({ queryKey: ['activity_feed'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  // Realtime handled centrally in useNotifications — no duplicate channel here
 
   return (
     <div className="rounded-md border border-border bg-card p-4 h-full">
