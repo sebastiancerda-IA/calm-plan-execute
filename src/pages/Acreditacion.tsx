@@ -5,10 +5,12 @@ import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
 import {
   Upload, FileText, Check, Loader2, Send, Bot, Shield,
-  Database, Clock, AlertTriangle, ChevronDown, Sparkles,
+  Database, Clock, AlertTriangle, ChevronDown, Sparkles, Cpu,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 
@@ -16,6 +18,13 @@ const BUCKET = 'acreditation-docs';
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/acreditation-advisor`;
 
 type Msg = { role: 'user' | 'assistant'; content: string; sources?: string[] };
+
+const AI_MODELS = [
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
+  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
+  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
+];
 
 // ─── Semáforo de acreditación ───────────────────────────────
 function AccreditationSemaphore({ criteria }: { criteria: any[] }) {
@@ -273,6 +282,7 @@ function TabAgenteDios() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [mode, setMode] = useState<'asesor' | 'evaluador'>('asesor');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('acred_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { documents } = useSupabaseRAG();
 
@@ -316,7 +326,7 @@ function TabAgenteDios() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: [...messages, userMsg], mode }),
+        body: JSON.stringify({ messages: [...messages, userMsg], mode, model: selectedModel }),
       });
 
       if (!resp.ok) {
@@ -371,7 +381,7 @@ function TabAgenteDios() {
             {ragCount > 0 ? `${ragCount} docs en RAG` : 'Sin documentos — respuestas genéricas'}
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setMode('asesor')}
             className={`text-[9px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${
@@ -388,6 +398,28 @@ function TabAgenteDios() {
           >
             <Shield size={10} /> Evaluador Duro
           </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <Cpu size={9} className="text-muted-foreground" />
+                  <Select value={selectedModel} onValueChange={(v) => { setSelectedModel(v); localStorage.setItem('acred_model', v); }}>
+                    <SelectTrigger className="h-6 w-[110px] text-[9px] border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map(m => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          {m.label} — {m.desc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

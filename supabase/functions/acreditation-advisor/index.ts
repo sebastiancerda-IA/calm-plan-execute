@@ -73,7 +73,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { messages, mode = "asesor" } = await req.json();
+    const ALLOWED_MODELS = [
+      "google/gemini-3-flash-preview",
+      "google/gemini-2.5-pro",
+      "openai/gpt-5",
+      "openai/gpt-5-mini",
+    ];
+
+    const { messages, mode = "asesor", model: requestedModel } = await req.json();
+    const model = ALLOWED_MODELS.includes(requestedModel) ? requestedModel : "google/gemini-3-flash-preview";
 
     // Fetch dynamic context including RAG doc count
     const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, ragRes] = await Promise.all([
@@ -129,7 +137,7 @@ PROGRAMAS OTEC ACTIVOS: ${(otecRes.data || []).map((p: any) => `${p.name} (${p.t
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,

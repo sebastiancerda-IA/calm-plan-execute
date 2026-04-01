@@ -4,12 +4,21 @@ import { MetricTile } from '@/components/shared/MetricTile';
 import { useInstitutionalMetrics } from '@/hooks/useInstitutionalMetrics';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles, Cpu } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
+
+const AI_MODELS = [
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
+  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
+  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
+];
 
 const SUGGESTIONS = [
   '¿Cuál es nuestra estructura de costos actual?',
@@ -25,6 +34,7 @@ function FinancialChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'analista' | 'auditor'>('analista');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('fin_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: recordCount = 0 } = useQuery({
@@ -57,7 +67,7 @@ function FinancialChat() {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ messages: allMessages, mode }),
+        body: JSON.stringify({ messages: allMessages, mode, model: selectedModel }),
       });
 
       if (!resp.ok) {
@@ -110,7 +120,12 @@ function FinancialChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, mode]);
+  }, [messages, isLoading, mode, selectedModel]);
+
+  const handleModelChange = (val: string) => {
+    setSelectedModel(val);
+    localStorage.setItem('fin_model', val);
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-220px)] min-h-[400px]">
@@ -136,12 +151,35 @@ function FinancialChat() {
             ))}
           </div>
         </div>
-        <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
-          {recordCount} registros financieros
-        </span>
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <Cpu size={10} className="text-muted-foreground" />
+                  <Select value={selectedModel} onValueChange={handleModelChange}>
+                    <SelectTrigger className="h-7 w-[130px] text-[10px] border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_MODELS.map(m => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          <span>{m.label}</span>
+                          <span className="text-muted-foreground ml-1">— {m.desc}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
+            {recordCount} registros financieros
+          </span>
+        </div>
       </div>
-
-      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
