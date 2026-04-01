@@ -19,6 +19,13 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/acreditation
 
 type Msg = { role: 'user' | 'assistant'; content: string; sources?: string[] };
 
+const AI_MODELS = [
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
+  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
+  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
+];
+
 // ─── Semáforo de acreditación ───────────────────────────────
 function AccreditationSemaphore({ criteria }: { criteria: any[] }) {
   const noEvidence = criteria.filter((c: any) => (c.evidence_count || 0) === 0).length;
