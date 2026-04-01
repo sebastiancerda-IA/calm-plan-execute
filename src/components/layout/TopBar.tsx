@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { LogOut, Leaf, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LogOut, Leaf } from 'lucide-react';
 import { StatusDot } from '@/components/shared/StatusDot';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupabaseAlerts } from '@/hooks/useSupabaseAlerts';
 import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationPanel } from '@/components/shared/NotificationPanel';
 import { useNavigate } from 'react-router-dom';
 
 export function TopBar() {
