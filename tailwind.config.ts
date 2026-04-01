@@ -57,6 +57,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "idma-green": "hsl(var(--idma-green))",
+        "idma-green-light": "hsl(var(--idma-green-light))",
+        "idma-teal": "hsl(var(--idma-teal))",
+        "idma-blue": "hsl(var(--idma-blue))",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -34,14 +34,20 @@
 
     --radius: 0.375rem;
 
+    /* IDMA brand colors */
+    --idma-green: 152 69% 31%;
+    --idma-green-light: 152 55% 45%;
+    --idma-teal: 174 62% 40%;
+    --idma-blue: 207 90% 45%;
+
     --sidebar-background: 220 33% 7%;
     --sidebar-foreground: 210 20% 70%;
-    --sidebar-primary: 210 100% 52%;
+    --sidebar-primary: 152 69% 31%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 217 19% 14%;
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 215 19% 15%;
-    --sidebar-ring: 210 100% 52%;
+    --sidebar-ring: 152 69% 31%;
   }
 
   .light {
@@ -54,7 +60,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 210 100% 45%;
+    --primary: 152 69% 31%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 20% 93%;
@@ -71,16 +77,21 @@
 
     --border: 214 20% 85%;
     --input: 214 20% 85%;
-    --ring: 210 100% 45%;
+    --ring: 152 69% 31%;
+
+    --idma-green: 152 69% 31%;
+    --idma-green-light: 152 55% 45%;
+    --idma-teal: 174 62% 40%;
+    --idma-blue: 207 90% 45%;
 
     --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 215 14% 40%;
-    --sidebar-primary: 210 100% 45%;
+    --sidebar-primary: 152 69% 31%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 93%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 20% 88%;
-    --sidebar-ring: 210 100% 45%;
+    --sidebar-ring: 152 69% 31%;
   }
 }
 

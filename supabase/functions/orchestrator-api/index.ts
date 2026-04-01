@@ -182,6 +182,28 @@ serve(async (req) => {
         break;
       }
 
+      case "create_financial_record": {
+        const { data, error } = await supabase.from("financial_records").insert({
+          period: params.period,
+          category: params.category || "general",
+          concept: params.concept,
+          amount: params.amount,
+          record_type: params.record_type || "ingreso",
+          notes: params.notes || null,
+        }).select().single();
+        if (error) throw error;
+        result = { record: data };
+        break;
+      }
+
+      case "bulk_financial_records": {
+        if (!Array.isArray(params.records)) throw new Error("records array required");
+        const { data, error } = await supabase.from("financial_records").insert(params.records).select();
+        if (error) throw error;
+        result = { records: data, count: data?.length };
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({
           error: `Unknown action: ${action}`,
@@ -189,6 +211,7 @@ serve(async (req) => {
             "get_status", "get_agents", "get_criteria", "get_alerts",
             "get_documents", "get_metrics", "get_tasks",
             "update_agent", "create_alert", "add_execution", "add_rag_doc", "update_task",
+            "create_financial_record", "bulk_financial_records",
           ],
         }), {
           status: 400,
