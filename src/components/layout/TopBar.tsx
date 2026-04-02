@@ -5,12 +5,17 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationPanel } from '@/components/shared/NotificationPanel';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobileApp } from '@/hooks/useIsMobileApp';
 
 export function TopBar() {
   const [now, setNow] = useState(new Date());
   const [uptime, setUptime] = useState(0);
   const { user, role, signOut } = useAuth();
   const { requestPermission } = useNotifications();
+  const isMobile = useIsMobile();
+  const isApp = useIsMobileApp();
+  const showSidebarTrigger = !isMobile && !isApp;
 
   useEffect(() => {
     requestPermission();
@@ -34,7 +39,7 @@ export function TopBar() {
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-idma-green via-idma-teal to-idma-blue opacity-60" />
 
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        {showSidebarTrigger && <SidebarTrigger className="text-muted-foreground hover:text-foreground" />}
         <div className="flex items-center gap-2">
           <div className="relative">
             <Leaf size={20} className="text-idma-green" />
