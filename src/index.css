@@ -192,6 +192,19 @@
   .shine-effect:hover::after {
     transform: translateX(20%) translateY(20%);
   }
+  /* Performance utilities */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .contain-layout {
+    contain: layout style;
+  }
+
+  .contain-strict {
+    contain: strict;
+  }
 }
 
 @keyframes procesando-pulse {
