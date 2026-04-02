@@ -30,10 +30,11 @@ const CommandPalette = lazy(() => import('./components/shared/CommandPalette').t
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60000,
-      gcTime: 300000,
+      staleTime: 120000,
+      gcTime: 600000,
       retry: 1,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     },
   },
 });
