@@ -1,50 +1,40 @@
 import { useQuery } from '@tanstack/react-query';
-import { ragService, systemMetricsService } from '@/services/supabaseService';
+import { qdrantService } from '@/services/qdrantService';
 import { useMemo } from 'react';
 
+// Lee documentos directamente de Qdrant — sin pasar por tabla rag_documents de Supabase
 export function useSupabaseRAG() {
-  const { data: documents = [], isLoading: docsLoading } = useQuery({
-    queryKey: ['rag_documents'],
-    queryFn: async () => {
-      const { data, error } = await ragService.getDocuments(100);
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 120000,
+  const { data: qdrantData, isLoading } = useQuery({
+    queryKey: ['qdrant_documents'],
+    queryFn: () => qdrantService.listDocuments(500),
+    staleTime: 60000,
+    retry: 2,
   });
 
-  const { data: metrics = [] } = useQuery({
-    queryKey: ['system_metrics'],
-    queryFn: async () => {
-      const { data, error } = await systemMetricsService.getAll();
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 120000,
-  });
+  const documents = qdrantData?.documents || [];
 
   const stats = useMemo(() => {
-    const getMetric = (name: string) => metrics.find((m: any) => m.metric_name === name);
     const totalDocs = documents.length;
-    const gmailDocs = documents.filter((d: any) => d.fuente === 'gmail').length;
-    const driveDocs = documents.filter((d: any) => d.fuente === 'drive').length;
+    const totalChunks = qdrantData?.total_chunks || 0;
+    const driveDocs = documents.filter((d) => d.fuente === 'drive').length;
+    const gmailDocs = documents.filter((d) => d.fuente === 'gmail').length;
 
-    const agentDist: Record<string, number> = {};
-    documents.forEach((d: any) => {
-      const key = d.agent_id || 'unknown';
-      agentDist[key] = (agentDist[key] || 0) + 1;
+    const byCategoria: Record<string, number> = {};
+    documents.forEach((d) => {
+      const k = d.categoria || 'general';
+      byCategoria[k] = (byCategoria[k] || 0) + 1;
     });
 
     return {
       totalDocuments: totalDocs,
-      totalPoints: getMetric('qdrant_total_points')?.metric_value || totalDocs,
-      sources: { gmail: gmailDocs, drive: driveDocs, manual: 0 },
-      jinaTokensUsed: getMetric('jina_tokens_used')?.metric_value || 3700,
+      totalPoints: totalChunks,
+      sources: { gmail: gmailDocs, drive: driveDocs, manual: totalDocs - driveDocs - gmailDocs },
+      jinaTokensUsed: totalChunks * 150, // estimado
       jinaTokensLimit: 1000000,
-      agentDistribution: agentDist,
-      lastIndexed: documents[0]?.created_at || '',
+      agentDistribution: byCategoria,
+      lastIndexed: documents[0]?.fecha || '',
     };
-  }, [documents, metrics]);
+  }, [documents, qdrantData]);
 
-  return { documents, stats, isLoading: docsLoading };
+  return { documents, stats, isLoading };
 }

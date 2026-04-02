@@ -204,6 +204,48 @@ serve(async (req) => {
         break;
       }
 
+      case "list_qdrant_docs": {
+        // Lee documentos directamente de Qdrant — sin pasar por rag_documents Supabase
+        const qdrantUrl = "https://qdrant-production-e4a5.up.railway.app";
+        const scrollBody: any = {
+          limit: params.limit || 500,
+          with_payload: true,
+          with_vector: false,
+        };
+        if (params.categoria) {
+          scrollBody.filter = { must: [{ key: "categoria", match: { value: params.categoria } }] };
+        }
+        const qdrantRes = await fetch(`${qdrantUrl}/collections/idma_knowledge/points/scroll`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(scrollBody),
+        });
+        if (!qdrantRes.ok) throw new Error(`Qdrant error: ${qdrantRes.status}`);
+        const qdrantData = await qdrantRes.json();
+        const points = qdrantData.result?.points || [];
+
+        // Agrupar chunks por titulo → documentos únicos con conteo de chunks
+        const docMap: Record<string, any> = {};
+        for (const p of points) {
+          const key = p.payload?.titulo || p.payload?.title || p.id;
+          if (!docMap[key]) {
+            docMap[key] = {
+              id: String(p.id),
+              titulo: p.payload?.titulo || p.payload?.title || "Sin título",
+              fuente: p.payload?.fuente || "drive",
+              categoria: p.payload?.categoria || "general",
+              criterios_cna: p.payload?.criterios_cna || [],
+              chunk_count: 0,
+              fecha: p.payload?.fecha || p.payload?.indexed_at || new Date().toISOString().split("T")[0],
+            };
+          }
+          docMap[key].chunk_count += 1;
+        }
+        const documents = Object.values(docMap);
+        result = { documents, total_chunks: points.length, total_docs: documents.length };
+        break;
+      }
+
       case "bulk_rag_docs": {
         if (!Array.isArray(params.documents)) throw new Error("documents array required");
         const docs = params.documents.map((d: any) => ({
