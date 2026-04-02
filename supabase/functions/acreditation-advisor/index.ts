@@ -108,19 +108,42 @@ serve(async (req) => {
 
     const { messages, mode = "asesor" } = await req.json();
 
-    // Contexto dinámico desde Supabase
-    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, ragRes] = await Promise.all([
+    // Contexto dinámico desde Supabase + Qdrant
+    const qdrantUrl = "https://qdrant-production-e4a5.up.railway.app";
+
+    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, qdrantScrollRes] = await Promise.all([
       supabase.from("cna_criteria").select("*").order("id"),
       supabase.from("alerts").select("title, priority, description").eq("resolved", false).limit(10),
       supabase.from("acreditation_documents").select("title, document_type, criterio_cna, processed, summary").order("uploaded_at", { ascending: false }).limit(20),
       supabase.from("institutional_metrics").select("metric_key, metric_value, period").order("period", { ascending: false }).limit(15),
       supabase.from("otec_programs").select("name, type, status, students_enrolled").eq("status", "activo"),
-      supabase.from("rag_documents").select("id, titulo, fuente, categoria, criterios_cna").limit(100),
+      fetch(`${qdrantUrl}/collections/idma_knowledge/points/scroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100, with_payload: true, with_vector: false }),
+      }).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
 
-    const ragCount = ragRes.data?.length || 0;
+    // Agrupar puntos Qdrant por titulo → documentos únicos
+    const qdrantPoints = qdrantScrollRes?.result?.points || [];
+    const qdrantDocMap: Record<string, any> = {};
+    for (const p of qdrantPoints) {
+      const key = p.payload?.titulo || p.payload?.title || String(p.id);
+      if (!qdrantDocMap[key]) {
+        qdrantDocMap[key] = {
+          titulo: p.payload?.titulo || p.payload?.title || "Sin título",
+          fuente: p.payload?.fuente || "drive",
+          categoria: p.payload?.categoria || "general",
+          criterios_cna: p.payload?.criterios_cna || [],
+          chunk_count: 0,
+        };
+      }
+      qdrantDocMap[key].chunk_count += 1;
+    }
+    const qdrantDocs = Object.values(qdrantDocMap);
+    const ragCount = qdrantDocs.length;
     const ragDocsContext = ragCount > 0
-      ? `DOCUMENTOS INDEXADOS EN RAG (${ragCount}):\n${(ragRes.data || []).map((d: any) => `- ${d.titulo} (${d.fuente || 'manual'}, categoría: ${d.categoria || 'general'}, criterios: ${(d.criterios_cna || []).join(', ') || 'ninguno'})`).join("\n")}`
+      ? `DOCUMENTOS INDEXADOS EN RAG (${ragCount} docs, ${qdrantPoints.length} chunks):\n${qdrantDocs.map((d: any) => `- ${d.titulo} (${d.fuente}, categoría: ${d.categoria}, criterios: ${(d.criterios_cna || []).join(', ') || 'ninguno'}, chunks: ${d.chunk_count})`).join("\n")}`
       : "RAG en construcción — respuestas basadas en contexto del sistema y benchmarks. Indexación de documentos Drive en proceso.";
 
     const criteriaContext = (criteriaRes.data || []).map((c: any) =>
