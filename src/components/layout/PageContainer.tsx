@@ -15,29 +15,29 @@ export function PageContainer({ children }: PageContainerProps) {
   const isApp = useIsMobileApp();
   const useMobileNav = isMobile || isApp;
 
-  if (useMobileNav) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <TopBar />
-        <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 pb-20">
-          {children}
-        </main>
-        <MobileNav />
-      </div>
-    );
-  }
-
+  // Always wrap with SidebarProvider so useSidebar() never throws,
+  // even during the first render when useIsMobile() returns false on mobile.
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+      {useMobileNav ? (
+        <div className="min-h-screen flex flex-col bg-background">
           <TopBar />
-          <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 lg:p-6">
+          <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 pb-20">
             {children}
           </main>
+          <MobileNav />
         </div>
-      </div>
+      ) : (
+        <div className="min-h-screen flex w-full bg-background">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <TopBar />
+            <main className="flex-1 overflow-auto scroll-smooth p-3 sm:p-4 lg:p-6">
+              {children}
+            </main>
+          </div>
+        </div>
+      )}
     </SidebarProvider>
   );
 }
