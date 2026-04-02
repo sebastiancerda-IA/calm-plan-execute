@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       devOptions: { enabled: false },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         runtimeCaching: [
