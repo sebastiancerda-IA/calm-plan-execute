@@ -24,10 +24,11 @@ serve(async (req) => {
       authenticated = true;
     } else if (authHeader?.startsWith("Bearer ")) {
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const token = authHeader.replace("Bearer ", "");
-      const authClient = createClient(supabaseUrl, anonKey);
-      const { data, error } = await authClient.auth.getClaims(token);
-      if (!error && data?.claims?.sub) authenticated = true;
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await userClient.auth.getUser();
+      if (user) authenticated = true;
     }
 
     if (!authenticated) {
