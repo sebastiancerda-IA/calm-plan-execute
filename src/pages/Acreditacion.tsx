@@ -270,7 +270,7 @@ function TabAgenteDios() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [mode, setMode] = useState<'asesor' | 'evaluador'>('asesor');
+  const [mode, setMode] = useState<'asesor' | 'evaluador' | 'estratega'>('asesor');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('acred_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { documents } = useSupabaseRAG();
@@ -279,12 +279,24 @@ function TabAgenteDios() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const suggestedQueries = [
-    '¿Cuál es nuestro estado real en Dimensión IV?',
-    '¿Qué evidencias nos faltan para C13 y C14?',
+  const suggestedQueries = mode === 'estratega' ? [
+    '¿Cómo recuperamos matrícula a 500 estudiantes en 12 meses?',
+    '¿Qué modelo de negocios propones para la plataforma LMS de IDMA?',
+    '¿Cuáles son nuestras ventajas competitivas reales vs otros CFTs?',
+    'Analiza nuestra situación financiera y recomienda prioridades',
+    '¿Cómo capitalizamos Erasmus+ para posicionamiento y crecimiento?',
+  ] : mode === 'evaluador' ? [
+    '¿Qué observaría un par evaluador en nuestra Dimensión IV?',
+    '¿Nuestra evidencia de CNA es suficiente para acreditar?',
+    '¿Qué inconsistencias detectas entre lo declarado y lo demostrado?',
+    'Evalúa nuestro estado actual como lo haría CNA',
+    '¿Qué nos falta para pasar de N1 a N2 en los criterios críticos?',
+  ] : [
+    '¿Cuál es el estado real de nuestra acreditación hoy?',
+    '¿Qué evidencias nos faltan para aprobar Dimensión IV?',
+    '¿Cuáles son las 5 acciones más urgentes para CNA?',
     '¿Qué observaciones hizo CNA en la visita anterior?',
-    'Prioriza las 5 acciones más urgentes para acreditación',
-    '¿Cómo van las otras dimensiones?',
+    '¿Cómo van las otras dimensiones respecto a la meta?',
   ];
 
   const sendMessage = async (text?: string) => {
@@ -296,18 +308,6 @@ function TabAgenteDios() {
     setInput('');
     setIsStreaming(true);
 
-    let assistantSoFar = '';
-    const upsertAssistant = (chunk: string) => {
-      assistantSoFar += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'assistant') {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...prev, { role: 'assistant', content: assistantSoFar }];
-      });
-    };
-
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -315,7 +315,7 @@ function TabAgenteDios() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: [...messages, userMsg], mode, model: selectedModel }),
+        body: JSON.stringify({ messages: [...messages, userMsg], mode }),
       });
 
       if (!resp.ok) {
@@ -325,30 +325,9 @@ function TabAgenteDios() {
         return;
       }
 
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('No stream');
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, idx);
-          buffer = buffer.slice(idx + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) upsertAssistant(content);
-          } catch { /* partial */ }
-        }
-      }
+      const data = await resp.json();
+      const content = data.content || 'Sin respuesta del modelo.';
+      setMessages(prev => [...prev, { role: 'assistant', content }]);
     } catch (e: any) {
       toast.error(e.message || 'Error al conectar con IA');
     }
@@ -385,7 +364,15 @@ function TabAgenteDios() {
               mode === 'evaluador' ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-muted-foreground'
             }`}
           >
-            <Shield size={10} /> Evaluador Duro
+            <Shield size={10} /> Evaluador
+          </button>
+          <button
+            onClick={() => setMode('estratega')}
+            className={`text-[9px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${
+              mode === 'estratega' ? 'bg-emerald-600 text-white' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            <Sparkles size={10} /> Estratega
           </button>
           <TooltipProvider>
             <Tooltip>
@@ -419,8 +406,10 @@ function TabAgenteDios() {
             <Bot size={28} className="mx-auto text-muted-foreground/50" />
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               {mode === 'asesor'
-                ? 'Soy el Agente Dios — tu asesor estratégico de acreditación. Pregúntame sobre brechas, evidencias, o benchmarks.'
-                : 'Modo Evaluador Duro activo. Evaluaré como un par CNA real: exigente, crítico y riguroso.'}
+                ? 'Soy el Agente Dios — inteligencia estratégica completa de IDMA. Pregúntame sobre acreditación, matrícula, operaciones o proyección.'
+                : mode === 'evaluador'
+                ? 'Modo Evaluador Duro activo. Evaluaré como un par CNA real: exigente, crítico y riguroso.'
+                : 'Modo Estratega activo. Pienso en crecimiento, modelo de negocios y ventaja competitiva de IDMA.'}
             </p>
             <div className="flex flex-wrap gap-1.5 justify-center max-w-lg mx-auto">
               {suggestedQueries.map((q) => (
@@ -463,7 +452,7 @@ function TabAgenteDios() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder={mode === 'asesor' ? '¿Cómo mejorar Dimensión IV?' : 'Evalúa críticamente nuestro estado...'}
+          placeholder={mode === 'estratega' ? '¿Cómo crecemos a 500 estudiantes en 12 meses?' : mode === 'evaluador' ? 'Evalúa críticamente nuestro estado...' : '¿Cuál es nuestro estado real de acreditación?'}
           className="flex-1 bg-secondary border border-border rounded px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           disabled={isStreaming}
         />
@@ -493,7 +482,7 @@ export default function Acreditacion() {
         <TabsList className="w-full justify-start">
           <TabsTrigger value="estado" className="text-xs">Estado Actual</TabsTrigger>
           <TabsTrigger value="rag" className="text-xs">Documentos RAG</TabsTrigger>
-          <TabsTrigger value="agente" className="text-xs">Consultar Agente Dios</TabsTrigger>
+          <TabsTrigger value="agente" className="text-xs">Agente Dios — Estratega IDMA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="estado">
