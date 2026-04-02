@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 // Qdrant service — lee de Qdrant vía orchestrator-api (proxy edge function)
 // El browser no puede llamar Qdrant directamente por CORS, la edge function actúa de proxy.
 
@@ -5,15 +7,28 @@ const ORCHESTRATOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orch
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 async function callOrchestrator(action: string, params: Record<string, any> = {}) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('No active session');
+  }
+
   const res = await fetch(ORCHESTRATOR_URL, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${ANON_KEY}`,
+      'Content-Type': 'application/json',
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ action, ...params }),
   });
-  if (!res.ok) throw new Error(`Orchestrator error: ${res.status}`);
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`Orchestrator error: ${res.status}${message ? ` - ${message}` : ''}`);
+  }
+
   return res.json();
 }
 
@@ -29,11 +44,11 @@ export interface RagDocument {
 
 export const qdrantService = {
   async listDocuments(limit = 500, categoria?: string): Promise<{ documents: RagDocument[]; total_chunks: number; total_docs: number }> {
-    return callOrchestrator("list_qdrant_docs", { limit, ...(categoria ? { categoria } : {}) });
+    return callOrchestrator('list_qdrant_docs', { limit, ...(categoria ? { categoria } : {}) });
   },
 
   async getCollectionInfo(): Promise<{ points: number; docs: number }> {
-    const data = await callOrchestrator("list_qdrant_docs", { limit: 500 });
+    const data = await callOrchestrator('list_qdrant_docs', { limit: 500 });
     return { points: data.total_chunks || 0, docs: data.total_docs || 0 };
   },
 };
