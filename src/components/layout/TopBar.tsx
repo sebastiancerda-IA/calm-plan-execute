@@ -13,6 +13,9 @@ export function TopBar() {
   const [uptime, setUptime] = useState(0);
   const { user, role, signOut } = useAuth();
   const { requestPermission } = useNotifications();
+  const isMobile = useIsMobile();
+  const isApp = useIsMobileApp();
+  const showSidebarTrigger = !isMobile && !isApp;
 
   useEffect(() => {
     requestPermission();
