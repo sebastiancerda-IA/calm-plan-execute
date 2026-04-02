@@ -16,19 +16,18 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
     // For external callers (Claude Code), validate X-Api-Key
-    // For internal (frontend), validate JWT via supabase
+    // For internal (frontend), validate JWT claims via supabase
     const authHeader = req.headers.get("authorization");
     let authenticated = false;
 
     if (apiKey && apiKey === serviceRoleKey) {
       authenticated = true;
-    } else if (authHeader) {
+    } else if (authHeader?.startsWith("Bearer ")) {
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user } } = await userClient.auth.getUser();
-      if (user) authenticated = true;
+      const token = authHeader.replace("Bearer ", "");
+      const authClient = createClient(supabaseUrl, anonKey);
+      const { data, error } = await authClient.auth.getClaims(token);
+      if (!error && data?.claims?.sub) authenticated = true;
     }
 
     if (!authenticated) {

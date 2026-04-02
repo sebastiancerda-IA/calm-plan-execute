@@ -1,14 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { qdrantService } from '@/services/qdrantService';
 import { useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Lee documentos directamente de Qdrant — sin pasar por tabla rag_documents de Supabase
 export function useSupabaseRAG() {
+  const { session } = useAuth();
+
   const { data: qdrantData, isLoading } = useQuery({
     queryKey: ['qdrant_documents'],
-    queryFn: () => qdrantService.listDocuments(500),
-    staleTime: 60000,
-    retry: 2,
+    queryFn: () => qdrantService.listDocuments(200),
+    staleTime: 300000,
+    retry: 0,
+    refetchOnWindowFocus: false,
+    enabled: !!session,
   });
 
   const documents = qdrantData?.documents || [];
@@ -29,7 +34,7 @@ export function useSupabaseRAG() {
       totalDocuments: totalDocs,
       totalPoints: totalChunks,
       sources: { gmail: gmailDocs, drive: driveDocs, manual: totalDocs - driveDocs - gmailDocs },
-      jinaTokensUsed: totalChunks * 150, // estimado
+      jinaTokensUsed: totalChunks * 150,
       jinaTokensLimit: 1000000,
       agentDistribution: byCategoria,
       lastIndexed: documents[0]?.fecha || '',
@@ -38,3 +43,4 @@ export function useSupabaseRAG() {
 
   return { documents, stats, isLoading };
 }
+

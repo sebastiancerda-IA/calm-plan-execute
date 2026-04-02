@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -74,6 +74,7 @@ function AuthenticatedApp() {
           <PageTransition>
             <Routes location={location}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/index" element={<Navigate to="/" replace />} />
               <Route path="/agents" element={<AgentsList />} />
               <Route path="/agent/:id" element={<AgentDetail />} />
               <Route path="/cna" element={<CNAMatrix />} />
