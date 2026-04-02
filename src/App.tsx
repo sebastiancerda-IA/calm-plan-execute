@@ -74,6 +74,7 @@ function AuthenticatedApp() {
           <PageTransition>
             <Routes location={location}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/index" element={<Navigate to="/" replace />} />
               <Route path="/agents" element={<AgentsList />} />
               <Route path="/agent/:id" element={<AgentDetail />} />
               <Route path="/cna" element={<CNAMatrix />} />
