@@ -5,6 +5,8 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationPanel } from '@/components/shared/NotificationPanel';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobileApp } from '@/hooks/useIsMobileApp';
 
 export function TopBar() {
   const [now, setNow] = useState(new Date());
