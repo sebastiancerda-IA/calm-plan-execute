@@ -229,6 +229,54 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          allocated_amount: number | null
+          budget_type: string
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          line_items: Json | null
+          notes: string | null
+          period: string
+          status: string
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount?: number | null
+          budget_type?: string
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          period: string
+          status?: string
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number | null
+          budget_type?: string
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          period?: string
+          status?: string
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cna_criteria: {
         Row: {
           actions: string[] | null
@@ -274,6 +322,57 @@ export type Database = {
           responsible_agent?: string | null
           target_level?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      commercial_proposals: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          client_rut: string | null
+          created_at: string
+          description: string | null
+          id: string
+          line_items: Json | null
+          notes: string | null
+          proposal_type: string
+          status: string
+          title: string
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          client_rut?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          proposal_type?: string
+          status?: string
+          title: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          client_rut?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          proposal_type?: string
+          status?: string
+          title?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
         }
         Relationships: []
       }
