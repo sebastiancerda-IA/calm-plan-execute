@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { exportFinancialRecords } from '@/lib/exportUtils';
+import { BudgetBuilder } from '@/components/finanzas/BudgetBuilder';
+import { ProposalBuilder } from '@/components/finanzas/ProposalBuilder';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -275,6 +277,8 @@ export default function Finanzas() {
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="dashboard" className="text-xs">Dashboard</TabsTrigger>
+          <TabsTrigger value="presupuestos" className="text-xs">Presupuestos</TabsTrigger>
+          <TabsTrigger value="propuestas" className="text-xs">Propuestas</TabsTrigger>
           <TabsTrigger value="asesor" className="text-xs">Consultar Asesor</TabsTrigger>
         </TabsList>
 
@@ -388,6 +392,14 @@ export default function Finanzas() {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="presupuestos">
+          <BudgetBuilder />
+        </TabsContent>
+
+        <TabsContent value="propuestas">
+          <ProposalBuilder />
         </TabsContent>
 
         <TabsContent value="asesor">
