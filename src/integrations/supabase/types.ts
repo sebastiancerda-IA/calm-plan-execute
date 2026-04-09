@@ -106,6 +106,7 @@ export type Database = {
           id: string
           items_processed_24h: number | null
           last_run: string | null
+          model: string | null
           name: string
           platform: string
           status: string
@@ -126,6 +127,7 @@ export type Database = {
           id: string
           items_processed_24h?: number | null
           last_run?: string | null
+          model?: string | null
           name: string
           platform: string
           status?: string
@@ -146,6 +148,7 @@ export type Database = {
           id?: string
           items_processed_24h?: number | null
           last_run?: string | null
+          model?: string | null
           name?: string
           platform?: string
           status?: string
