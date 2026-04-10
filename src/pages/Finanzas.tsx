@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { exportFinancialRecords } from '@/lib/exportUtils';
+import { BudgetBuilder } from '@/components/finanzas/BudgetBuilder';
+import { ProposalBuilder } from '@/components/finanzas/ProposalBuilder';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -35,7 +37,7 @@ function FinancialChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<'analista' | 'auditor'>('analista');
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('fin_model') || 'google/gemini-3-flash-preview');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: recordCount = 0 } = useQuery({
@@ -68,60 +70,28 @@ function FinancialChat() {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ messages: allMessages, mode, model: selectedModel }),
+        body: JSON.stringify({ messages: allMessages, mode }),
       });
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
         if (resp.status === 429) toast.error('Límite de requests. Espera un momento.');
-        else if (resp.status === 402) toast.error('Créditos de IA agotados.');
         else if (resp.status === 403) toast.error('Acceso restringido.');
         else toast.error(err.error || 'Error del asesor');
         setIsLoading(false);
         return;
       }
 
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('No stream');
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let nl: number;
-        while ((nl = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, nl);
-          buffer = buffer.slice(nl + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ')) continue;
-          const json = line.slice(6).trim();
-          if (json === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(json);
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) {
-              assistantContent += delta;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-                }
-                return [...prev, { role: 'assistant', content: assistantContent }];
-              });
-            }
-          } catch { /* partial */ }
-        }
-      }
+      const data = await resp.json();
+      assistantContent = data.content || '—';
+      setMessages(prev => [...prev, { role: 'assistant', content: assistantContent }]);
     } catch (e) {
       console.error(e);
       toast.error('Error de conexión con el asesor');
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, mode, selectedModel]);
+  }, [messages, isLoading, mode]);
 
   const handleModelChange = (val: string) => {
     setSelectedModel(val);
@@ -307,6 +277,8 @@ export default function Finanzas() {
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="dashboard" className="text-xs">Dashboard</TabsTrigger>
+          <TabsTrigger value="presupuestos" className="text-xs">Presupuestos</TabsTrigger>
+          <TabsTrigger value="propuestas" className="text-xs">Propuestas</TabsTrigger>
           <TabsTrigger value="asesor" className="text-xs">Consultar Asesor</TabsTrigger>
         </TabsList>
 
@@ -420,6 +392,14 @@ export default function Finanzas() {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="presupuestos">
+          <BudgetBuilder />
+        </TabsContent>
+
+        <TabsContent value="propuestas">
+          <ProposalBuilder />
         </TabsContent>
 
         <TabsContent value="asesor">

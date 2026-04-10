@@ -27,23 +27,30 @@ LECCIONES COMUNES DE INSTITUCIONES EXITOSAS:
 8. Cuerpo docente evaluado y con plan de desarrollo
 `;
 
-const SYSTEM_ASESOR = `Eres el Agente Dios — Asesor Estratégico de Acreditación de CFT IDMA, institución chilena de educación técnico-profesional ambiental.
+const SYSTEM_ASESOR = `Eres Agente Dios — Inteligencia Estratégica Completa de CFT IDMA, institución ambiental chilena con +30 años de trayectoria en educación técnico-profesional.
 
-Tu rol es GUIAR hacia la máxima acreditación posible. Eres constructivo, estratégico y orientado a soluciones.
+Tu misión es el éxito TOTAL de IDMA: financiero, académico, operativo, legal, marketing y proyección estratégica. La acreditación CNA es un trámite clave, pero eres el asesor de todo el negocio.
 
-CONTEXTO IDMA:
-- CFT ambiental con ~700 estudiantes
-- Preparándose para acreditación CNA 2027
-- Ecosistema de 12 agentes IA gestionando operaciones
-- Áreas: VCM, OTEC, Rectoría, Finanzas, Acreditación, RAG
+ÁREAS QUE DOMINAS:
+- Matrícula y admisión: 9 carreras técnicas activas al 01-04-2026:
+  Veterinaria (86 mat.), Manejo Áreas Silvestres (77), Paisajismo Sustentable (61), Medio Ambiente (45),
+  Restauración Ecológica (17), Prevención Riesgos (16), Agricultura Ecológica (19), Energías Renovables (19), Ecoturismo (12).
+  Total: 352 matriculados. Meta institucional: recuperar los 1.300+ estudiantes pre-pandemia.
+- Acreditación CNA 2027: 16 criterios, 5 dimensiones, promedio 19% de avance. Dimensión IV (VCM) es obligatoria desde mayo 2025.
+- VCM & Sustentabilidad: Convenios municipales y empresariales, proyectos Erasmus+ (Minds On Earth, ENJOY, Blue Economy Lab, TERRA, DualTech LATAM, GENERA), postulaciones CORFO/FIC.
+- OTEC-AMA: Capacitación laboral, gestión comercial, cash flow, CRM.
+- Finanzas: Gestión DG, presupuestos por área, proyecciones, CNA C8.
+- Proyección futura: Plataforma LMS propia tipo Coursera/Udemy (microcredenciales, cursos asincrónicos, modelos freemium/suscripción, docentes productores de contenido) — horizonte estratégico a 2-3 años.
+- Ecosistema IA: Orquesta de agentes (VCM, OTEC, Finanzas, Rectoría) + dashboard La Orquesta + RAG institucional.
 
 ${BENCHMARKS}
 
 INSTRUCCIONES:
 - Responde siempre en español chileno profesional
-- Sé específico y concreto — no generalidades
-- Referencia benchmarks cuando sea relevante
-- Prioriza acciones por impacto en acreditación
+- Sé específico y orientado a acción concreta — no generalidades
+- Acreditación: usa los 16 criterios CNA y el estado de avance del contexto
+- Negocios y crecimiento: actúa como CFO + CMO + CEO combinado
+- Operaciones: conecta con los agentes disponibles del ecosistema
 - Identifica quick wins vs cambios estructurales`;
 
 const SYSTEM_EVALUADOR = `Eres un Par Evaluador CNA simulado. Tu rol es evaluar CFT IDMA como lo haría un evaluador real de la Comisión Nacional de Acreditación de Chile.
@@ -61,49 +68,86 @@ INSTRUCCIONES:
 - Usa el tono formal de un informe de evaluación externa
 - Responde en español`;
 
+const SYSTEM_ESTRATEGA = `Eres Agente Dios en modo Estratega — consultor de negocios de alto nivel para CFT IDMA.
+
+Tu foco es el CRECIMIENTO y la COMPETITIVIDAD. No te quedas en el estado actual — proyectas el futuro.
+
+CONTEXTO IDMA:
+- 352 matriculados al 01-04-2026. Pre-pandemia: 1.300+. Brecha: casi 1.000 estudiantes.
+- 9 carreras ambientales únicas en Chile. Único CFT especializado en sustentabilidad.
+- Ecosistema IA completo en construcción (n8n + Supabase + Qdrant + Gemini).
+- Slogan: "A mí me importa". Marca con identidad ambiental fuerte.
+- Proyecto futuro: plataforma LMS propia (tipo Coursera/Udemy) con cursos asincrónicos, microcredenciales, modelos freemium y premium, docentes como productores de contenido.
+
+ÁREAS DE ANÁLISIS:
+- Modelo de negocios: cómo monetizar conocimiento ambiental a escala
+- Recuperación de matrícula: canales, conversión de leads, retención
+- Posicionamiento competitivo: qué hace único a IDMA vs CFTs generalistas
+- Plataforma LMS: modelo de ingresos por capas (básico/plus/pro/max), revenue sharing docentes, go-to-market
+- Erasmus+ y proyectos internacionales: cómo capitalizarlos para marketing y acreditación
+- Automatización: ROI del ecosistema IA, eficiencia operacional
+
+INSTRUCCIONES:
+- Responde con mentalidad de venture capital + academia
+- Da números y benchmarks cuando puedas
+- Propón estrategias ambiciosas pero realizables
+- Señala riesgos sin paralizarte en ellos
+- Responde en español chileno profesional`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const ALLOWED_MODELS = [
-      "google/gemini-3-flash-preview",
-      "google/gemini-2.5-pro",
-      "openai/gpt-5",
-      "openai/gpt-5-mini",
-    ];
+    const { messages, mode = "asesor" } = await req.json();
 
-    const { messages, mode = "asesor", model: requestedModel } = await req.json();
-    const model = ALLOWED_MODELS.includes(requestedModel) ? requestedModel : "google/gemini-3-flash-preview";
+    // Contexto dinámico desde Supabase + Qdrant
+    const qdrantUrl = "https://qdrant-production-e4a5.up.railway.app";
 
-    // Fetch dynamic context including RAG doc count
-    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, ragRes] = await Promise.all([
+    const [criteriaRes, alertsRes, docsRes, metricsRes, otecRes, qdrantScrollRes] = await Promise.all([
       supabase.from("cna_criteria").select("*").order("id"),
       supabase.from("alerts").select("title, priority, description").eq("resolved", false).limit(10),
       supabase.from("acreditation_documents").select("title, document_type, criterio_cna, processed, summary").order("uploaded_at", { ascending: false }).limit(20),
       supabase.from("institutional_metrics").select("metric_key, metric_value, period").order("period", { ascending: false }).limit(15),
       supabase.from("otec_programs").select("name, type, status, students_enrolled").eq("status", "activo"),
-      supabase.from("rag_documents").select("id, titulo, fuente, categoria, criterios_cna").limit(100),
+      fetch(`${qdrantUrl}/collections/idma_knowledge/points/scroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100, with_payload: true, with_vector: false }),
+      }).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
 
-    const ragCount = ragRes.data?.length || 0;
+    // Agrupar puntos Qdrant por titulo → documentos únicos
+    const qdrantPoints = qdrantScrollRes?.result?.points || [];
+    const qdrantDocMap: Record<string, any> = {};
+    for (const p of qdrantPoints) {
+      const key = p.payload?.titulo || p.payload?.title || String(p.id);
+      if (!qdrantDocMap[key]) {
+        qdrantDocMap[key] = {
+          titulo: p.payload?.titulo || p.payload?.title || "Sin título",
+          fuente: p.payload?.fuente || "drive",
+          categoria: p.payload?.categoria || "general",
+          criterios_cna: p.payload?.criterios_cna || [],
+          chunk_count: 0,
+        };
+      }
+      qdrantDocMap[key].chunk_count += 1;
+    }
+    const qdrantDocs = Object.values(qdrantDocMap);
+    const ragCount = qdrantDocs.length;
     const ragDocsContext = ragCount > 0
-      ? `DOCUMENTOS INDEXADOS EN RAG (${ragCount}):\n${(ragRes.data || []).map((d: any) => `- ${d.titulo} (${d.fuente || 'manual'}, categoría: ${d.categoria || 'general'}, criterios: ${(d.criterios_cna || []).join(', ') || 'ninguno'})`).join("\n")}`
-      : "NO HAY DOCUMENTOS CARGADOS EN RAG AÚN. Tus respuestas serán basadas en conocimiento general CNA y los benchmarks proporcionados. Indica al usuario que cargue documentos para obtener análisis específicos de IDMA.";
+      ? `DOCUMENTOS INDEXADOS EN RAG (${ragCount} docs, ${qdrantPoints.length} chunks):\n${qdrantDocs.map((d: any) => `- ${d.titulo} (${d.fuente}, categoría: ${d.categoria}, criterios: ${(d.criterios_cna || []).join(', ') || 'ninguno'}, chunks: ${d.chunk_count})`).join("\n")}`
+      : "RAG en construcción — respuestas basadas en contexto del sistema y benchmarks. Indexación de documentos Drive en proceso.";
 
     const criteriaContext = (criteriaRes.data || []).map((c: any) =>
       `${c.id} "${c.name}" [${c.dimension}] — Actual: ${c.current_level}, Meta: ${c.target_level}, Evidencias: ${c.evidence_count}, Prioritario: ${c.is_priority ? 'SÍ' : 'no'}, Obligatorio: ${c.is_mandatory ? 'SÍ' : 'no'}, Brecha: ${c.gap_description || 'N/A'}`
-    ).join("\n");
-
-    const docsContext = (docsRes.data || []).map((d: any) =>
-      `- ${d.title} (${d.document_type}, criterio: ${d.criterio_cna || 'general'}, procesado: ${d.processed ? 'sí' : 'no'})`
     ).join("\n");
 
     const metricsContext = (metricsRes.data || []).map((m: any) =>
@@ -115,10 +159,7 @@ ESTADO DE RAG:
 ${ragDocsContext}
 
 ESTADO ACTUAL DE CRITERIOS CNA (${criteriaRes.data?.length || 0} criterios):
-${criteriaContext}
-
-DOCUMENTOS DE ACREDITACIÓN CARGADOS (${docsRes.data?.length || 0}):
-${docsContext || "Ninguno aún"}
+${criteriaContext || "Sin datos de criterios aún"}
 
 ALERTAS ACTIVAS: ${alertsRes.data?.length || 0}
 ${(alertsRes.data || []).map((a: any) => `[${a.priority}] ${a.title}`).join("\n") || "Ninguna"}
@@ -128,42 +169,48 @@ MÉTRICAS INSTITUCIONALES: ${metricsContext || "Sin datos"}
 PROGRAMAS OTEC ACTIVOS: ${(otecRes.data || []).map((p: any) => `${p.name} (${p.type}, ${p.students_enrolled} estudiantes)`).join(", ") || "Ninguno"}
 `;
 
-    const systemPrompt = (mode === "evaluador" ? SYSTEM_EVALUADOR : SYSTEM_ASESOR) + "\n\n" + dynamicContext;
+    const systemMap: Record<string, string> = {
+      asesor: SYSTEM_ASESOR,
+      evaluador: SYSTEM_EVALUADOR,
+      estratega: SYSTEM_ESTRATEGA,
+    };
+    const systemPrompt = (systemMap[mode] || SYSTEM_ASESOR) + "\n\n" + dynamicContext;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
-    });
+    // Convertir mensajes al formato Gemini
+    const geminiContents = messages.map((m: any) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
 
-    if (!response.ok) {
-      if (response.status === 429) {
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: geminiContents,
+          generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+        }),
+      }
+    );
+
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini error:", geminiRes.status, errText);
+      if (geminiRes.status === 429) {
         return new Response(JSON.stringify({ error: "Límite de requests alcanzado. Intenta en unos minutos." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA agotados." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI error:", response.status, t);
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`Gemini error: ${geminiRes.status}`);
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const geminiData = await geminiRes.json();
+    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta del modelo.";
+
+    return new Response(JSON.stringify({ content: text }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("acreditation-advisor error:", e);

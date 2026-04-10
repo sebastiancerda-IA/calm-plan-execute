@@ -1,22 +1,54 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Real data from Supabase — replaces mock Qdrant service
+// Qdrant service — lee de Qdrant vía orchestrator-api (proxy edge function)
+// El browser no puede llamar Qdrant directamente por CORS, la edge function actúa de proxy.
 
-interface QdrantService {
-  getCollectionInfo(): Promise<{ points: number; vectors: number }>;
-  search(query: string, topK: number): Promise<any[]>;
+const ORCHESTRATOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-api`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function callOrchestrator(action: string, params: Record<string, any> = {}) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error('No active session');
+  }
+
+  const res = await fetch(ORCHESTRATOR_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ action, ...params }),
+  });
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`Orchestrator error: ${res.status}${message ? ` - ${message}` : ''}`);
+  }
+
+  return res.json();
 }
 
-export const qdrantService: QdrantService = {
-  async getCollectionInfo() {
-    const { count } = await supabase
-      .from('rag_documents')
-      .select('id', { count: 'exact', head: true });
-    const points = count || 0;
-    return { points, vectors: points * 4 };
+export interface RagDocument {
+  id: string;
+  titulo: string;
+  fuente: string;
+  categoria: string;
+  criterios_cna: string[];
+  chunk_count: number;
+  fecha: string;
+}
+
+export const qdrantService = {
+  async listDocuments(limit = 500, categoria?: string): Promise<{ documents: RagDocument[]; total_chunks: number; total_docs: number }> {
+    return callOrchestrator('list_qdrant_docs', { limit, ...(categoria ? { categoria } : {}) });
   },
-  async search(_query: string, _topK: number) {
-    // Search handled via acreditation-advisor edge function
-    return [];
+
+  async getCollectionInfo(): Promise<{ points: number; docs: number }> {
+    const data = await callOrchestrator('list_qdrant_docs', { limit: 500 });
+    return { points: data.total_chunks || 0, docs: data.total_docs || 0 };
   },
 };

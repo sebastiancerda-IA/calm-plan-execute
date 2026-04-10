@@ -4,27 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseCNA } from '@/hooks/useSupabaseCNA';
 import { useSupabaseRAG } from '@/hooks/useSupabaseRAG';
 import {
-  Upload, FileText, Check, Loader2, Send, Bot, Shield,
-  Database, Clock, AlertTriangle, ChevronDown, Sparkles, Cpu,
+  FileText, Loader2, Send, Bot, Shield,
+  Database, Clock, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 
-const BUCKET = 'acreditation-docs';
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/acreditation-advisor`;
 
-type Msg = { role: 'user' | 'assistant'; content: string; sources?: string[] };
-
-const AI_MODELS = [
-  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
-  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
-  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
-  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
-];
+type Msg = { role: 'user' | 'assistant'; content: string };
 
 // ─── Semáforo de acreditación ───────────────────────────────
 function AccreditationSemaphore({ criteria }: { criteria: any[] }) {
@@ -265,13 +255,12 @@ function TabDocumentosRAG() {
   );
 }
 
-// ─── Tab 3: Consultar Agente Dios ──────────────────────────
-function TabAgenteDios() {
+// ─── Tab 3: Asesor CNA ────────────────────────────────────
+function TabAsesorCNA() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'asesor' | 'evaluador'>('asesor');
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('acred_model') || 'google/gemini-3-flash-preview');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { documents } = useSupabaseRAG();
 
@@ -279,155 +268,134 @@ function TabAgenteDios() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const suggestedQueries = [
-    '¿Cuál es nuestro estado real en Dimensión IV?',
-    '¿Qué evidencias nos faltan para C13 y C14?',
-    '¿Qué observaciones hizo CNA en la visita anterior?',
-    'Prioriza las 5 acciones más urgentes para acreditación',
-    '¿Cómo van las otras dimensiones?',
-  ];
+  const queries = {
+    asesor: [
+      '¿Cuál es nuestro estado real hoy?',
+      '¿Qué evidencias faltan para Dimensión IV?',
+      '¿Las 5 acciones más urgentes para CNA?',
+      '¿Qué observó CNA en la visita anterior?',
+      '¿Cómo van las otras dimensiones?',
+    ],
+    evaluador: [
+      '¿Qué observaría un par en Dimensión IV?',
+      '¿Nuestra evidencia es suficiente para acreditar?',
+      '¿Qué inconsistencias detectas?',
+      'Evalúa nuestro estado como lo haría CNA',
+      '¿Qué falta para pasar de N1 a N2?',
+    ],
+  };
 
   const sendMessage = async (text?: string) => {
     const msg = (text || input).trim();
-    if (!msg || isStreaming) return;
-
+    if (!msg || loading) return;
     const userMsg: Msg = { role: 'user', content: msg };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsStreaming(true);
-
-    let assistantSoFar = '';
-    const upsertAssistant = (chunk: string) => {
-      assistantSoFar += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'assistant') {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...prev, { role: 'assistant', content: assistantSoFar }];
-      });
-    };
-
+    setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ messages: [...messages, userMsg], mode, model: selectedModel }),
+        body: JSON.stringify({ messages: [...messages, userMsg], mode }),
       });
-
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: 'Error de conexión' }));
         toast.error(err.error || `Error ${resp.status}`);
-        setIsStreaming(false);
+        setLoading(false);
         return;
       }
-
-      const reader = resp.body?.getReader();
-      if (!reader) throw new Error('No stream');
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, idx);
-          buffer = buffer.slice(idx + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) upsertAssistant(content);
-          } catch { /* partial */ }
-        }
-      }
+      const data = await resp.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.content || '—' }]);
     } catch (e: any) {
-      toast.error(e.message || 'Error al conectar con IA');
+      toast.error(e.message || 'Error al conectar');
     }
-    setIsStreaming(false);
+    setLoading(false);
   };
 
   const ragCount = documents.length;
+  const isEvaluador = mode === 'evaluador';
 
   return (
-    <div className="rounded-md border border-border bg-card flex flex-col h-[600px]">
+    <div className="flex flex-col h-[620px] rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Bot size={16} className="text-primary" />
-          <h3 className="text-xs font-medium text-foreground">Consultar Agente Dios</h3>
-          <span className={`text-[9px] px-2 py-0.5 rounded font-mono ${
-            ragCount > 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-          }`}>
-            {ragCount > 0 ? `${ragCount} docs en RAG` : 'Sin documentos — respuestas genéricas'}
-          </span>
+      <div className={`flex items-center justify-between px-4 py-3 border-b border-border ${
+        isEvaluador ? 'bg-destructive/5' : 'bg-primary/5'
+      }`}>
+        <div className="flex items-center gap-2.5">
+          {isEvaluador
+            ? <Shield size={15} className="text-destructive" />
+            : <Sparkles size={15} className="text-primary" />
+          }
+          <div>
+            <p className="text-xs font-semibold text-foreground">
+              {isEvaluador ? 'Par Evaluador CNA' : 'Asesor Acreditación'}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {isEvaluador ? 'Evaluación crítica y rigurosa' : 'Orientación estratégica hacia la acreditación'}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setMode('asesor')}
-            className={`text-[9px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${
-              mode === 'asesor' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            <Bot size={10} /> Asesor
-          </button>
-          <button
-            onClick={() => setMode('evaluador')}
-            className={`text-[9px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${
-              mode === 'evaluador' ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            <Shield size={10} /> Evaluador Duro
-          </button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1">
-                  <Cpu size={9} className="text-muted-foreground" />
-                  <Select value={selectedModel} onValueChange={(v) => { setSelectedModel(v); localStorage.setItem('acred_model', v); }}>
-                    <SelectTrigger className="h-6 w-[110px] text-[9px] border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AI_MODELS.map(m => (
-                        <SelectItem key={m.id} value={m.id} className="text-xs">
-                          {m.label} — {m.desc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center gap-2">
+          <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono border ${
+            ragCount > 0
+              ? 'border-green-500/30 bg-green-500/10 text-green-400'
+              : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400'
+          }`}>
+            {ragCount > 0 ? `${ragCount} docs RAG` : 'Sin RAG'}
+          </span>
+          <div className="flex rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setMode('asesor')}
+              className={`text-[9px] px-2.5 py-1 flex items-center gap-1 transition-colors ${
+                !isEvaluador ? 'bg-primary text-primary-foreground' : 'bg-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles size={9} /> Asesor
+            </button>
+            <button
+              onClick={() => setMode('evaluador')}
+              className={`text-[9px] px-2.5 py-1 flex items-center gap-1 transition-colors border-l border-border ${
+                isEvaluador ? 'bg-destructive text-destructive-foreground' : 'bg-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Shield size={9} /> Evaluador
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
-          <div className="text-center py-6 space-y-4">
-            <Bot size={28} className="mx-auto text-muted-foreground/50" />
-            <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              {mode === 'asesor'
-                ? 'Soy el Agente Dios — tu asesor estratégico de acreditación. Pregúntame sobre brechas, evidencias, o benchmarks.'
-                : 'Modo Evaluador Duro activo. Evaluaré como un par CNA real: exigente, crítico y riguroso.'}
+          <div className="flex flex-col items-center justify-center h-full gap-5">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              isEvaluador ? 'bg-destructive/10' : 'bg-primary/10'
+            }`}>
+              {isEvaluador
+                ? <Shield size={20} className="text-destructive" />
+                : <Sparkles size={20} className="text-primary" />
+              }
+            </div>
+            <p className="text-xs text-muted-foreground text-center max-w-sm leading-relaxed">
+              {isEvaluador
+                ? 'Modo Par Evaluador CNA activo. Seré exigente, crítico y riguroso — como un evaluador real de la Comisión.'
+                : 'Asesor de acreditación CNA 2027. Pregúntame sobre estado de criterios, brechas, evidencias o benchmarks.'}
             </p>
-            <div className="flex flex-wrap gap-1.5 justify-center max-w-lg mx-auto">
-              {suggestedQueries.map((q) => (
+            <div className="flex flex-wrap gap-1.5 justify-center max-w-md">
+              {queries[mode].map((q) => (
                 <button
                   key={q}
                   onClick={() => sendMessage(q)}
-                  className="text-[10px] px-2.5 py-1.5 rounded-full border border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                  className={`text-[10px] px-3 py-1.5 rounded-full border transition-colors ${
+                    isEvaluador
+                      ? 'border-destructive/30 bg-destructive/5 text-muted-foreground hover:bg-destructive/10 hover:text-foreground'
+                      : 'border-primary/30 bg-primary/5 text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                  }`}
                 >
                   {q}
                 </button>
@@ -438,42 +406,64 @@ function TabAgenteDios() {
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-lg px-3 py-2 text-xs ${
+            {msg.role === 'assistant' && (
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-0.5 ${
+                isEvaluador ? 'bg-destructive/10' : 'bg-primary/10'
+              }`}>
+                {isEvaluador ? <Shield size={11} className="text-destructive" /> : <Sparkles size={11} className="text-primary" />}
+              </div>
+            )}
+            <div className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
               msg.role === 'user'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-foreground'
+                ? 'bg-primary text-primary-foreground rounded-br-sm'
+                : isEvaluador
+                  ? 'bg-destructive/10 text-foreground border border-destructive/20 rounded-bl-sm'
+                  : 'bg-secondary text-foreground rounded-bl-sm'
             }`}>
               <div className="whitespace-pre-wrap">{msg.content}</div>
             </div>
           </div>
         ))}
 
-        {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
+        {loading && (
           <div className="flex justify-start">
-            <div className="bg-secondary rounded-lg px-3 py-2">
-              <Loader2 size={14} className="animate-spin text-muted-foreground" />
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 ${
+              isEvaluador ? 'bg-destructive/10' : 'bg-primary/10'
+            }`}>
+              <Loader2 size={11} className={`animate-spin ${isEvaluador ? 'text-destructive' : 'text-primary'}`} />
+            </div>
+            <div className="bg-secondary rounded-xl px-4 py-3 flex gap-1 items-center">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
             </div>
           </div>
         )}
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder={mode === 'asesor' ? '¿Cómo mejorar Dimensión IV?' : 'Evalúa críticamente nuestro estado...'}
-          className="flex-1 bg-secondary border border-border rounded px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          disabled={isStreaming}
-        />
-        <button
-          onClick={() => sendMessage()}
-          disabled={isStreaming || !input.trim()}
-          className="bg-primary text-primary-foreground rounded px-3 py-2 text-xs hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          <Send size={14} />
-        </button>
+      <div className="p-3 border-t border-border bg-card/50">
+        <div className="flex gap-2 items-center">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            placeholder={isEvaluador ? 'Evalúa críticamente nuestro estado CNA...' : 'Pregunta sobre acreditación, evidencias, criterios...'}
+            className="flex-1 bg-secondary border border-border rounded-lg px-3.5 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+            disabled={loading}
+          />
+          <button
+            onClick={() => sendMessage()}
+            disabled={loading || !input.trim()}
+            className={`rounded-lg px-3 py-2 text-xs transition-colors disabled:opacity-40 ${
+              isEvaluador
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
+          >
+            <Send size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -493,7 +483,7 @@ export default function Acreditacion() {
         <TabsList className="w-full justify-start">
           <TabsTrigger value="estado" className="text-xs">Estado Actual</TabsTrigger>
           <TabsTrigger value="rag" className="text-xs">Documentos RAG</TabsTrigger>
-          <TabsTrigger value="agente" className="text-xs">Consultar Agente Dios</TabsTrigger>
+          <TabsTrigger value="agente" className="text-xs">Asesor CNA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="estado">
@@ -505,7 +495,7 @@ export default function Acreditacion() {
         </TabsContent>
 
         <TabsContent value="agente">
-          <TabAgenteDios />
+          <TabAsesorCNA />
         </TabsContent>
       </Tabs>
     </div>
