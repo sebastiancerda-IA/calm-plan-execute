@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Proyecto IDMA propio — wipeaufqdiohfdtcbhac
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://wipeaufqdiohfdtcbhac.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_2reG5ddK8AVmbqyu5RtKsQ_DMI5h6LK';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
