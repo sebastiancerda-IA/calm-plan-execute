@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Play, RefreshCw, FileText, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
 type ActionStatus = 'idle' | 'running' | 'success' | 'error';
+type CnaCriteriaRow = Database['public']['Tables']['cna_criteria']['Row'];
 
 interface Action {
   id: string;
@@ -14,8 +16,8 @@ interface Action {
 }
 
 const actions: Action[] = [
-  { id: 'classify-emails', label: 'Clasificar emails', description: 'Forzar clasificación A1/C1', icon: Play, color: '#E8734A' },
-  { id: 'reindex-rag', label: 'Re-indexar RAG', description: 'Ejecutar indexación A3', icon: RefreshCw, color: '#3B82F6' },
+  { id: 'classify-emails', label: 'Clasificar emails', description: 'Forzar clasificacion A1/C1', icon: Play, color: '#E8734A' },
+  { id: 'reindex-rag', label: 'Re-indexar RAG', description: 'Ejecutar indexacion A3', icon: RefreshCw, color: '#3B82F6' },
   { id: 'generate-briefing', label: 'Generar briefing', description: 'Resumen diario con IA', icon: FileText, color: '#8B5CF6' },
   { id: 'export-cna', label: 'Exportar CNA', description: 'Descargar estado CSV', icon: Download, color: '#10B981' },
 ];
@@ -28,14 +30,21 @@ export function ActionCenter() {
 
     try {
       if (actionId === 'export-cna') {
-        // Client-side CSV export
         const { data } = await supabase.from('cna_criteria').select('*').order('id');
         if (data) {
-          const headers = ['ID', 'Nombre', 'Dimensión', 'Nivel Actual', 'Nivel Meta', 'Evidencias', 'Brecha'];
-          const rows = data.map((c: any) => [
-            c.id, c.name, c.dimension, c.current_level, c.target_level, c.evidence_count, c.gap_description,
+          const headers = ['ID', 'Nombre', 'Dimension', 'Nivel Actual', 'Nivel Meta', 'Evidencias', 'Brecha'];
+          const rows = (data as CnaCriteriaRow[]).map((c) => [
+            c.id,
+            c.name,
+            c.dimension,
+            c.current_level,
+            c.target_level,
+            c.evidence_count,
+            c.gap_description,
           ]);
-          const csv = [headers, ...rows].map((r) => r.map((v: any) => `"${v || ''}"`).join(',')).join('\n');
+          const csv = [headers, ...rows]
+            .map((r) => r.map((v) => `"${v ?? ''}"`).join(','))
+            .join('\n');
           const blob = new Blob([csv], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -46,28 +55,21 @@ export function ActionCenter() {
           setStatuses((s) => ({ ...s, [actionId]: 'success' }));
           toast.success('CSV exportado');
         }
-      } else if (actionId === 'generate-briefing') {
-        const { data, error } = await supabase.functions.invoke('cna-advisor', {
-          body: { type: 'briefing' },
-        });
-        if (error) throw error;
-        toast.success('Briefing generado', { description: data?.summary?.slice(0, 100) || 'Listo' });
-        setStatuses((s) => ({ ...s, [actionId]: 'success' }));
       } else {
-        // Webhook actions — call n8n-webhook
-        const { error } = await supabase.functions.invoke('n8n-webhook', {
-          body: { action: actionId },
+        const { data, error } = await supabase.functions.invoke('orchestrator-api', {
+          body: { action: 'run_operational_action', action_id: actionId },
         });
         if (error) throw error;
+
+        const description = typeof data?.message === 'string' ? data.message : 'Listo';
+        toast.success('Accion ejecutada', { description });
         setStatuses((s) => ({ ...s, [actionId]: 'success' }));
-        toast.success('Acción ejecutada');
       }
-    } catch (err) {
+    } catch {
       setStatuses((s) => ({ ...s, [actionId]: 'error' }));
-      toast.error('Error al ejecutar acción');
+      toast.error('Error al ejecutar accion');
     }
 
-    // Reset after 3s
     setTimeout(() => setStatuses((s) => ({ ...s, [actionId]: 'idle' })), 3000);
   };
 

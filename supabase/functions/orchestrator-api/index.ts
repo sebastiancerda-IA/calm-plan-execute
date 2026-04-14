@@ -6,6 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status = 500) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -43,6 +53,13 @@ serve(async (req) => {
     const { action, ...params } = body;
 
     let result: any;
+    const nowIso = new Date().toISOString();
+
+    const resolveAgentIdsByCode = async (codes: string[]) => {
+      const { data } = await supabase.from("agents").select("id, code").in("code", codes);
+      const byCode = new Map((data || []).map((a) => [a.code, a.id]));
+      return codes.map((code) => byCode.get(code) || code);
+    };
 
     switch (action) {
       case "get_status": {
@@ -109,6 +126,80 @@ serve(async (req) => {
         const { data } = await q;
         result = { tasks: data };
         break;
+      }
+
+      case "run_operational_action": {
+        const actionId = params.action_id;
+        if (!actionId) throw new HttpError("action_id required", 400);
+
+        if (actionId === "classify-emails") {
+          const targetAgentIds = await resolveAgentIdsByCode(["A1", "C1"]);
+          const tasks = targetAgentIds.map((agentId) => ({
+            agent_id: agentId,
+            title: "Clasificacion manual solicitada",
+            description: "Se solicita ejecucion manual del ciclo de clasificacion de correo.",
+            priority: "alta",
+            status: "pendiente",
+            category: "operacion",
+          }));
+          const { error } = await supabase.from("agent_tasks").insert(tasks);
+          if (error) throw error;
+          result = {
+            action_id: actionId,
+            tasks_created: tasks.length,
+            message: "Se encolo clasificacion para A1 y C1.",
+          };
+          break;
+        }
+
+        if (actionId === "reindex-rag") {
+          const [a3AgentId] = await resolveAgentIdsByCode(["A3"]);
+          const { error: taskError } = await supabase.from("agent_tasks").insert({
+            agent_id: a3AgentId,
+            title: "Reindexacion RAG solicitada",
+            description: "Ejecucion de reindexacion de convenios/documentos solicitada desde panel.",
+            priority: "alta",
+            status: "pendiente",
+            category: "rag",
+          });
+          if (taskError) throw taskError;
+
+          const { error: execError } = await supabase.from("executions").insert({
+            agent_id: a3AgentId,
+            status: "queued",
+            items_processed: 0,
+            started_at: nowIso,
+            finished_at: nowIso,
+            workflow_id: "manual-reindex-rag",
+          });
+          if (execError) throw execError;
+
+          result = {
+            action_id: actionId,
+            message: "Reindexacion RAG encolada para A3.",
+          };
+          break;
+        }
+
+        if (actionId === "generate-briefing") {
+          const [adAgentId] = await resolveAgentIdsByCode(["AD"]);
+          const { error: taskError } = await supabase.from("agent_tasks").insert({
+            agent_id: adAgentId,
+            title: "Briefing ejecutivo solicitado",
+            description: "Preparar resumen operativo diario desde tablero de control.",
+            priority: "media",
+            status: "pendiente",
+            category: "briefing",
+          });
+          if (taskError) throw taskError;
+          result = {
+            action_id: actionId,
+            message: "Briefing operativo encolado para AD.",
+          };
+          break;
+        }
+
+        throw new HttpError(`Unsupported operational action: ${actionId}`, 400);
       }
 
       case "update_agent": {
@@ -347,6 +438,7 @@ serve(async (req) => {
             "get_financial_summary", "get_system_health", "get_ui_state",
             "update_agent", "create_alert", "add_execution", "add_rag_doc", "update_task",
             "create_financial_record", "bulk_financial_records", "bulk_rag_docs",
+            "list_qdrant_docs", "run_operational_action",
           ],
         }), {
           status: 400,
@@ -359,8 +451,9 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("orchestrator-api error:", e);
+    const status = e instanceof HttpError ? e.status : 500;
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

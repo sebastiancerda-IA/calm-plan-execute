@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:baseline": "powershell -ExecutionPolicy Bypass -File ./scripts/check_operational_baseline.ps1"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
