@@ -11,8 +11,9 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabaseRuntime';
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/acreditation-advisor`;
+const CHAT_URL = `${getSupabaseUrl()}/functions/v1/acreditation-advisor`;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -298,7 +299,7 @@ function TabAsesorCNA() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: getSupabasePublishableKey(),
           Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ messages: [...messages, userMsg], mode }),

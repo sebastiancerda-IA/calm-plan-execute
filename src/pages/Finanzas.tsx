@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { exportFinancialRecords } from '@/lib/exportUtils';
+import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabaseRuntime';
 import { BudgetBuilder } from '@/components/finanzas/BudgetBuilder';
 import { ProposalBuilder } from '@/components/finanzas/ProposalBuilder';
 
@@ -63,12 +64,12 @@ function FinancialChat() {
     let assistantContent = '';
 
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/financial-advisor`, {
+      const resp = await fetch(`${getSupabaseUrl()}/functions/v1/financial-advisor`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: getSupabasePublishableKey(),
         },
         body: JSON.stringify({ messages: allMessages, mode }),
       });

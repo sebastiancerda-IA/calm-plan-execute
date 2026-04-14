@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import type { TablesInsert } from '@/integrations/supabase/types';
 import { exportConvenios } from '@/lib/exportUtils';
+import { getResolvedProjectId, IDMA_SUPABASE_PROJECT_ID } from '@/lib/supabaseRuntime';
 
 type ConvenioInsert = TablesInsert<'convenios'>;
 
@@ -145,13 +146,6 @@ const INITIAL_FORM: ConvenioInsert = {
   criterios_cna: TEMPLATES.empresa_privada.criterios_cna || [],
 };
 
-const EXPECTED_SUPABASE_PROJECT_ID = 'wipeaufqdiohfdtcbhac';
-
-function inferProjectIdFromUrl(url: string | undefined): string {
-  if (!url) return '';
-  return url.replace('https://', '').split('.')[0] || '';
-}
-
 export default function Convenios() {
   const { isDirector, session, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -159,10 +153,8 @@ export default function Convenios() {
   const [form, setForm] = useState<ConvenioInsert>({ ...INITIAL_FORM });
   const [filterEstado, setFilterEstado] = useState<string>('todos');
   const [search, setSearch] = useState('');
-  const configuredProjectId =
-    ((import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined) || '').trim() ||
-    inferProjectIdFromUrl(import.meta.env.VITE_SUPABASE_URL as string | undefined);
-  const isExpectedProject = configuredProjectId === EXPECTED_SUPABASE_PROJECT_ID;
+  const configuredProjectId = getResolvedProjectId();
+  const isExpectedProject = configuredProjectId === IDMA_SUPABASE_PROJECT_ID;
 
   const { data: convenios = [], isLoading, isError, error: queryError } = useQuery({
     queryKey: ['convenios', session?.user?.id ?? 'anon'],
@@ -319,7 +311,7 @@ export default function Convenios() {
           <p className="text-sm font-medium text-destructive">Entorno Supabase inconsistente</p>
           <p className="text-xs text-muted-foreground">
             Proyecto activo: <span className="font-mono">{configuredProjectId || 'no-definido'}</span> | Esperado:{' '}
-            <span className="font-mono">{EXPECTED_SUPABASE_PROJECT_ID}</span>
+            <span className="font-mono">{IDMA_SUPABASE_PROJECT_ID}</span>
           </p>
           <p className="text-xs text-muted-foreground">
             Corrige VITE_SUPABASE_URL / VITE_SUPABASE_PROJECT_ID antes de diagnosticar convenios.

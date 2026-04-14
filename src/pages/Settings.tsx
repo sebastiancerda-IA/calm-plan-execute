@@ -7,6 +7,7 @@ import { Copy, Check, Eye, EyeOff, Wifi, WifiOff, Play, Loader2, RefreshCw } fro
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getSupabaseUrl } from '@/lib/supabaseRuntime';
 
 const API_EXAMPLES = [
   { label: 'Estado completo', payload: '{ "action": "get_status" }' },
@@ -76,7 +77,7 @@ function N8NPanel() {
   const [simulating, setSimulating] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState('');
 
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/n8n-webhook`;
+  const webhookUrl = `${getSupabaseUrl()}/functions/v1/n8n-webhook`;
 
   const { data: agents = [] } = useQuery({
     queryKey: ['agents-workflows'],
@@ -283,7 +284,7 @@ function SupabaseStatusPanel() {
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { prefs, setPrefs, setWidgetVisible } = useUserPreferences();
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-api`;
+  const apiUrl = `${getSupabaseUrl()}/functions/v1/orchestrator-api`;
 
   return (
     <div className="space-y-6">

@@ -1,10 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabaseRuntime';
 
 // Qdrant service — lee de Qdrant vía orchestrator-api (proxy edge function)
 // El browser no puede llamar Qdrant directamente por CORS, la edge function actúa de proxy.
-
-const ORCHESTRATOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-api`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 async function callOrchestrator(action: string, params: Record<string, any> = {}) {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -14,11 +12,13 @@ async function callOrchestrator(action: string, params: Record<string, any> = {}
     throw new Error('No active session');
   }
 
-  const res = await fetch(ORCHESTRATOR_URL, {
+  const orchestratorUrl = `${getSupabaseUrl()}/functions/v1/orchestrator-api`;
+
+  const res = await fetch(orchestratorUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: ANON_KEY,
+      apikey: getSupabasePublishableKey(),
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ action, ...params }),
