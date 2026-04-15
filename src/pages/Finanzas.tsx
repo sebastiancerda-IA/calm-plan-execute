@@ -101,7 +101,7 @@ export default function Finanzas() {
           <div className="mt-4 space-y-2 text-xs">
             {Object.entries(finanzasData.ingresos_breakdown).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                <span className="text-muted-foreground">{key.replaceAll('_', ' ')}</span>
+                <span className="text-muted-foreground">{key.split('_').join(' ')}</span>
                 <span className="font-mono text-foreground">{clp(value as number)}</span>
               </div>
             ))}

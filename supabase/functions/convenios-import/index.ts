@@ -177,12 +177,12 @@ serve(async (req) => {
     const body = await req.json();
     const action = asString(body.action || "dry_run");
     const sourceFile = asString(body.source_file || "Consolidado_IDMA_Compacto_Paso3_localizable_rapido.xlsx");
-    const rawRecords = Array.isArray(body.records) ? body.records : [];
+    const rawRecords: unknown[] = Array.isArray(body.records) ? body.records : [];
 
     const normalized: NormalizedConvenio[] = [];
     const errors: string[] = [];
 
-    rawRecords.forEach((raw, index) => {
+    rawRecords.forEach((raw: unknown, index: number) => {
       const { record, errors: rowErrors } = normalizeRecord(raw, index + 1);
       if (rowErrors.length > 0) {
         errors.push(...rowErrors);
