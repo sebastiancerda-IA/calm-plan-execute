@@ -34,15 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const fetchRole = useCallback(async (userId: string) => {
+  const fetchRole = useCallback(async (userId: string): Promise<Role> => {
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
       .maybeSingle();
 
+    // No bloquear acceso si la tabla/RLS falla: el usuario entra como staff.
     if (error) {
-      throw error;
+      console.warn('[auth] user_roles no disponible, usando rol staff:', error.message);
+      return 'staff';
     }
 
     return (data?.role as Role | undefined) ?? 'staff';
@@ -54,6 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole('staff');
   }, []);
 
+  // Evita loading eterno si Supabase/red/rol se quedan colgados (AuthGuard y Login quedaban bloqueados).
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setLoading((prev) => {
+        if (!prev) return prev;
+        console.warn('[auth] Bootstrap tardó demasiado; liberando pantalla para permitir login.');
+        return false;
+      });
+    }, 15000);
+    return () => clearTimeout(id);
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -61,6 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.removeItem('supabase.auth.token');
         localStorage.removeItem('sb-wipeaufqdiohfdtcbhac-auth-token');
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && /^sb-[\w-]+-auth-token$/i.test(k)) {
+            localStorage.removeItem(k);
+          }
+        }
       } catch {
         // Best effort cleanup for corrupted local auth cache.
       }
@@ -78,23 +98,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const restoreRole = async (userId: string) => {
-      try {
-        const nextRole = await fetchRole(userId);
-        if (!mounted) return;
-        setRole(nextRole);
-        setAuthError(null);
-      } catch (error) {
-        if (!mounted) return;
-        setRole('staff');
-        setAuthError(error instanceof Error ? error.message : 'No pudimos cargar tus permisos.');
-      } finally {
-        safeSetLoading(false);
-      }
+      const nextRole = await fetchRole(userId);
+      if (!mounted) return;
+      setRole(nextRole);
+      setAuthError(null);
+      safeSetLoading(false);
+    };
+
+    /** Solo errores típicos de refresh inválido — evitar coincidir con cualquier mensaje que diga "session". */
+    const isRefreshTokenBroken = (message: string) => {
+      const m = message.toLowerCase();
+      return (
+        m.includes('invalid refresh token') ||
+        m.includes('refresh token not found') ||
+        m.includes('refresh_token') ||
+        (m.includes('refresh') && m.includes('token') && (m.includes('invalid') || m.includes('expired') || m.includes('revoked')))
+      );
     };
 
     const recoverFromSessionError = async (error: unknown) => {
       const message = error instanceof Error ? error.message : 'No pudimos restaurar tu sesión.';
-      const isStaleSession = /refresh token|session|jwt/i.test(message);
+      const isStaleSession = isRefreshTokenBroken(message);
 
       if (isStaleSession) {
         clearBrokenSession();
