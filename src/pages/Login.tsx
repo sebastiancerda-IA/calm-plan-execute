@@ -7,7 +7,7 @@ import { AudioWaveform, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const { session, loading } = useAuth();
+  const { session, loading, authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -100,6 +100,12 @@ export default function Login() {
           <span className="text-xs text-muted-foreground">o con correo institucional</span>
           <div className="flex-1 h-px bg-border" />
         </div>
+
+        {authError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {authError}
+          </div>
+        )}
 
         {/* Email + Password Form */}
         <form onSubmit={handleEmailAuth} className="space-y-3">
