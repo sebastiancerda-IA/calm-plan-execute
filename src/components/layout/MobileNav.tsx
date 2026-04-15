@@ -6,7 +6,7 @@ import {
   DollarSign,
   GraduationCap,
   Handshake,
-  Bot,
+  School,
 } from 'lucide-react';
 
 const tabs = [
@@ -14,7 +14,7 @@ const tabs = [
   { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
   { to: '/acreditacion', icon: GraduationCap, label: 'CNA' },
   { to: '/vcm', icon: Handshake, label: 'VCM' },
-  { to: '/inteligencia', icon: Bot, label: 'IA' },
+  { to: '/cec', icon: School, label: 'Centros' },
 ];
 
 export const MobileNav = memo(function MobileNav() {

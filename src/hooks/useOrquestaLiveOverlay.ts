@@ -143,9 +143,11 @@ export function useOrquestaLiveOverlay() {
     hasAnyLiveData,
     loading:
       conveniosQuery.isLoading ||
+      conveniosConLinkQuery.isLoading ||
       cnaQuery.isLoading ||
       email24hQuery.isLoading ||
       agentsQuery.isLoading ||
-      ragDocsQuery.isLoading,
+      ragDocsQuery.isLoading ||
+      institutionalMetricsQuery.isLoading,
   };
 }

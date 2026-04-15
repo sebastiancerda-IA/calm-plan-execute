@@ -18,7 +18,7 @@ function compact(value: number) {
 }
 
 export default function Dashboard() {
-  const { live, hasAnyLiveData } = useOrquestaLiveOverlay();
+  const { live, hasAnyLiveData, loading: overlayLoading } = useOrquestaLiveOverlay();
 
   const saldoAcumulado = finanzasData.saldo_acumulado[finanzasData.saldo_acumulado.length - 1];
   const n3Static = cnaCriteria.filter((c) => c.nivel === 'N3').length;
@@ -53,8 +53,8 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className={`rounded-full border px-2.5 py-1 ${hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
-              {hasAnyLiveData ? 'Live overlay conectado' : 'Modo base estatico'}
+            <span className={`rounded-full border px-2.5 py-1 ${overlayLoading ? 'border-blue-500/40 text-blue-300 bg-blue-500/10' : hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
+              {overlayLoading ? 'Sincronizando overlay…' : hasAnyLiveData ? 'Live overlay conectado' : 'Modo base estático'}
             </span>
             <span className="rounded-full border border-border px-2.5 py-1 text-muted-foreground">Datos listos desde minuto 1</span>
           </div>

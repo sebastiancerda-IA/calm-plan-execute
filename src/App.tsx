@@ -10,8 +10,8 @@ import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { RouteErrorBoundary } from '@/components/shared/RouteErrorBoundary';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import Dashboard from './pages/Dashboard';
 
 const AgentDetail = lazy(() => import('./pages/AgentDetail'));
@@ -25,6 +25,9 @@ const Finanzas = lazy(() => import('./pages/Finanzas'));
 const VCM = lazy(() => import('./pages/VCM'));
 const OTEC = lazy(() => import('./pages/OTEC'));
 const Inteligencia = lazy(() => import('./pages/Inteligencia'));
+const CECOperativo = lazy(() => import('./pages/centros/CECOperativo'));
+const CTSOperativo = lazy(() => import('./pages/centros/CTSOperativo'));
+const Centro3Operativo = lazy(() => import('./pages/centros/Centro3Operativo'));
 const Install = lazy(() => import('./pages/Install'));
 const Login = lazy(() => import('./pages/Login'));
 const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
@@ -68,12 +71,13 @@ function AuthenticatedApp() {
   const location = useLocation();
   return (
     <PageContainer>
-      <Suspense fallback={null}>
+      <Suspense fallback={<SkeletonLoader />}>
         <CommandPalette />
       </Suspense>
       <AnimatePresence mode="wait">
         <Suspense fallback={<SkeletonLoader />} key={location.pathname}>
           <PageTransition>
+            <RouteErrorBoundary>
             <Routes location={location}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/index" element={<Navigate to="/" replace />} />
@@ -87,10 +91,15 @@ function AuthenticatedApp() {
               <Route path="/vcm" element={<VCM />} />
               <Route path="/otec" element={<OTEC />} />
               <Route path="/inteligencia" element={<Inteligencia />} />
+              <Route path="/cec" element={<CECOperativo />} />
+              <Route path="/cts" element={<CTSOperativo />} />
+              <Route path="/centro-3" element={<Centro3Operativo />} />
+              <Route path="/centro-cts" element={<Navigate to="/cts" replace />} />
               <Route path="/convenios" element={<Navigate to="/vcm" replace />} />
               <Route path="/install" element={<Install />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
+            </RouteErrorBoundary>
           </PageTransition>
         </Suspense>
       </AnimatePresence>

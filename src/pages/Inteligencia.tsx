@@ -99,16 +99,20 @@ export default function Inteligencia() {
             <h2 className="text-sm font-medium text-foreground">Feed reciente de actividad</h2>
           </div>
           <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1 text-xs">
-            {logs.map((log: any) => (
+            {logsQuery.isLoading && <p className="text-muted-foreground">Cargando actividadù</p>}
+            {logsQuery.isError && <p className="text-destructive">No se pudo cargar email_logs.</p>}
+            {!logsQuery.isLoading && logs.map((log: any) => (
               <div key={log.id} className="rounded-md border border-border px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-foreground line-clamp-1">{log.asunto || 'Sin asunto'}</p>
                   <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{log.prioridad || 'normal'}</span>
                 </div>
-                <p className="mt-1 text-muted-foreground">{log.categoria || 'sin categoria'} ∑ {log.agent_id || 'sin agente'}</p>
+                <p className="mt-1 text-muted-foreground">{log.categoria || 'sin categoria'} ù {log.agent_id || 'sin agente'}</p>
               </div>
             ))}
-            {logs.length === 0 && <p className="text-muted-foreground">Sin actividad reciente en email_logs.</p>}
+            {!logsQuery.isLoading && !logsQuery.isError && logs.length === 0 && (
+              <p className="text-muted-foreground">Sin actividad reciente en email_logs.</p>
+            )}
           </div>
         </article>
 
@@ -131,15 +135,20 @@ export default function Inteligencia() {
             {searchResults.map((item, idx) => (
               <div key={`${item.title}-${idx}`} className="rounded-md border border-border px-3 py-2">
                 <p className="text-foreground">{item.title}</p>
-                <p className="mt-1 text-muted-foreground">{item.source} ∑ {item.body}</p>
+                <p className="mt-1 text-muted-foreground">{item.source} ù {item.body}</p>
               </div>
             ))}
             {query && searchResults.length === 0 && <p className="text-muted-foreground">Sin resultados en el corpus demo.</p>}
             {!query && <p className="text-muted-foreground">Ingresa una consulta para explorar el conocimiento consolidado.</p>}
           </div>
 
-          <div className="mt-4 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground inline-flex items-center gap-1">
-            <Database size={12} /> Ultimos documentos RAG live: <span className="font-mono text-foreground">{ragDocs.length}</span>
+          <div className="mt-4 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground inline-flex flex-wrap items-center gap-1">
+            <Database size={12} /> ⁄ltimos documentos RAG live:{' '}
+            {ragQuery.isLoading && <span>cargandoÖ</span>}
+            {ragQuery.isError && <span className="text-destructive">error al cargar</span>}
+            {!ragQuery.isLoading && !ragQuery.isError && (
+              <span className="font-mono text-foreground">{ragDocs.length}</span>
+            )}
           </div>
         </article>
       </section>

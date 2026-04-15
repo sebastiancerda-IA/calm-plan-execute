@@ -91,8 +91,13 @@ export default function Acreditacion() {
 
         <article className="rounded-2xl border border-border bg-card p-5 lg:col-span-1">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Estado live</p>
-          <p className="mt-2 text-sm font-medium text-foreground">{liveCriteriaQuery.data ? 'Conectado a cna_criteria' : 'Usando base estatica'}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Actualizacion cada 3 minutos</p>
+          <p className="mt-2 text-sm font-medium text-foreground">
+            {liveCriteriaQuery.isLoading && 'Sincronizando criterios…'}
+            {liveCriteriaQuery.isError && 'No se pudo cargar cna_criteria (modo estático)'}
+            {!liveCriteriaQuery.isLoading && !liveCriteriaQuery.isError && liveCriteriaQuery.data && liveCriteriaQuery.data.length > 0 && 'Conectado a cna_criteria'}
+            {!liveCriteriaQuery.isLoading && !liveCriteriaQuery.isError && (!liveCriteriaQuery.data || liveCriteriaQuery.data.length === 0) && 'Usando base estática'}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">Actualización cada 3 minutos</p>
         </article>
       </section>
 

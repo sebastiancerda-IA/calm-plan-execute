@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 export type Role = 'director' | 'dg' | 'staff';
 
@@ -56,6 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const clearBrokenSession = () => {
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-wipeaufqdiohfdtcbhac-auth-token');
+      } catch {
+        // Best effort cleanup for corrupted local auth cache.
+      }
+    };
+
     const safeSetLoading = (value: boolean) => {
       if (mounted) setLoading(value);
     };
@@ -87,18 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isStaleSession = /refresh token|session|jwt/i.test(message);
 
       if (isStaleSession) {
+        clearBrokenSession();
         try {
           await supabase.auth.signOut({ scope: 'local' });
         } catch {
-          // noop: local cleanup below is the important part
+          // noop: local cleanup is the important part
         }
+        safeApplySignedOut(
+          'Tu sesión anterior expiró o quedó inválida. Vuelve a iniciar sesión.',
+        );
+        toast.error('Sesión local inválida o expirada. Inicia sesión de nuevo.', { duration: 8000 });
+        return;
       }
 
-      safeApplySignedOut(
-        isStaleSession
-          ? 'Tu sesión anterior expiró o quedó inválida. Vuelve a iniciar sesión.'
-          : message,
-      );
+      safeApplySignedOut(message);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {

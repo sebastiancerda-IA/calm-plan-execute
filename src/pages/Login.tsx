@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { SkeletonLoader } from '@/components/shared/SkeletonLoader';
 import { AudioWaveform, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,7 +15,7 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [sending, setSending] = useState(false);
 
-  if (loading) return null;
+  if (loading) return <SkeletonLoader />;
   if (session) return <Navigate to="/" replace />;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -26,7 +27,7 @@ export default function Login() {
     }
 
     if (password.length < 6) {
-      toast.error('La contraseÃ±a debe tener al menos 6 caracteres');
+      toast.error('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -48,8 +49,11 @@ export default function Login() {
         password,
       });
       if (error) {
-        if (error.message === 'Invalid login credentials') {
-          toast.error('Credenciales incorrectas. Â¿Ya creaste tu cuenta?');
+        const message = (error.message || '').toLowerCase();
+        if (message.includes('refresh token')) {
+          toast.error('Sesión local inválida detectada. Vuelve a iniciar sesión.');
+        } else if (error.message === 'Invalid login credentials') {
+          toast.error('Credenciales incorrectas. ¿Ya creaste tu cuenta?');
         } else {
           toast.error(error.message);
         }
@@ -64,14 +68,13 @@ export default function Login() {
       redirect_uri: window.location.origin,
     });
     if (error) {
-      toast.error('Error al iniciar sesiÃ³n con Google: ' + error.message);
+      toast.error('Error al iniciar sesión con Google: ' + error.message);
     }
   };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
             <AudioWaveform size={32} className="text-primary" />
@@ -80,7 +83,6 @@ export default function Login() {
           <p className="text-xs text-muted-foreground font-mono">Mission Control v4.2</p>
         </div>
 
-        {/* Google Button */}
         <button
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-3 bg-card border border-border rounded-md py-3 text-sm text-foreground hover:bg-accent transition-colors"
@@ -94,7 +96,6 @@ export default function Login() {
           Continuar con Google
         </button>
 
-        {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-border" />
           <span className="text-xs text-muted-foreground">o con correo institucional</span>
@@ -107,7 +108,6 @@ export default function Login() {
           </div>
         )}
 
-        {/* Email + Password Form */}
         <form onSubmit={handleEmailAuth} className="space-y-3">
           <div>
             <input
@@ -124,7 +124,7 @@ export default function Login() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="ContraseÃ±a"
+              placeholder="Contraseña"
               required
               minLength={6}
               className="w-full bg-card border border-border rounded-md px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
@@ -142,22 +142,23 @@ export default function Login() {
             disabled={sending}
             className="w-full bg-primary text-primary-foreground rounded-md py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {sending ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Iniciar sesiÃ³n'}
+            {sending ? 'Procesando...' : isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
           </button>
         </form>
 
         <p className="text-xs text-muted-foreground text-center">
-          {isSignUp ? 'Â¿Ya tienes cuenta?' : 'Â¿Primera vez?'}{' '}
+          {isSignUp ? '¿Ya tienes cuenta?' : '¿Primera vez?'}{' '}
           <button
+            type="button"
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-primary hover:underline"
           >
-            {isSignUp ? 'Iniciar sesiÃ³n' : 'Crear cuenta'}
+            {isSignUp ? 'Iniciar sesión' : 'Crear cuenta'}
           </button>
         </p>
 
         <p className="text-[10px] text-muted-foreground text-center font-mono">
-          CFT IDMA â€” Instituto del Medio Ambiente
+          CFT IDMA — Instituto del Medio Ambiente
         </p>
       </div>
     </div>

@@ -13,7 +13,7 @@ function fmtMillion(value: number) {
 }
 
 export default function Finanzas() {
-  const { live, hasAnyLiveData } = useOrquestaLiveOverlay();
+  const { live, hasAnyLiveData, loading: overlayLoading } = useOrquestaLiveOverlay();
 
   const chartData = finanzasData.months.map((month, i) => ({
     month,
@@ -40,8 +40,8 @@ export default function Finanzas() {
               Narrativa visual de ingresos, egresos y liquidez para detectar meses de riesgo antes de que impacten la operacion.
             </p>
           </div>
-          <span className={`rounded-full border px-2.5 py-1 text-xs ${hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
-            {hasAnyLiveData ? 'Overlay live habilitado' : 'Base estandar cargada'}
+          <span className={`rounded-full border px-2.5 py-1 text-xs ${overlayLoading ? 'border-blue-500/40 text-blue-300 bg-blue-500/10' : hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
+            {overlayLoading ? 'Sincronizando overlay…' : hasAnyLiveData ? 'Overlay live habilitado' : 'Base estándar cargada'}
           </span>
         </div>
       </section>

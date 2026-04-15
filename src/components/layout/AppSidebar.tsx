@@ -7,6 +7,7 @@ import {
   Handshake,
   BriefcaseBusiness,
   Bot,
+  School,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -20,6 +21,7 @@ const navItems = [
   { title: 'Finanzas', url: '/finanzas', icon: DollarSign, restricted: true },
   { title: 'VCM y Convenios', url: '/vcm', icon: Handshake, restricted: false },
   { title: 'OTEC Pipeline', url: '/otec', icon: BriefcaseBusiness, restricted: false },
+  { title: 'Centros', url: '/cec', icon: School, restricted: false },
   { title: 'Inteligencia IA', url: '/inteligencia', icon: Bot, restricted: false, showBadge: true },
   { title: 'Settings', url: '/settings', icon: Settings, restricted: false },
 ];
