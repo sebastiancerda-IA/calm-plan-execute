@@ -1,0 +1,24 @@
+{
+  "diplomados": [
+    {"name": "Medioambiente y Biodiversidad", "price": 550000, "hours": 120, "area": "Medio Ambiente"},
+    {"name": "Gestion y Valorizacion de Residuos Organicos", "price": 550000, "hours": 120, "area": "Sustentabilidad"},
+    {"name": "Especializacion en Sistemas Solares Fotovoltaicos", "price": 550000, "hours": 120, "area": "Energia"},
+    {"name": "Bienestar Animal, Manejo y Monitoreo de Especies", "price": 550000, "hours": 120, "area": "Biodiversidad"}
+  ],
+  "cursos": [
+    {"name": "Tecnicas de Tratamiento de Aguas Servidas", "price": 280000, "hours": 50},
+    {"name": "Gestion Ambiental en Humedales", "price": 240000, "hours": 40},
+    {"name": "Manejo y Rescate de Biodiversidad Marina", "price": 240000, "hours": 40},
+    {"name": "Sistemas Fotovoltaicos Conectados y Autonomos", "price": 220000, "hours": 36},
+    {"name": "Sistemas Solares Termicos Residenciales", "price": 200000, "hours": 24}
+  ],
+  "pipeline": {
+    "target_companies": 20,
+    "stages": [
+      {"name": "Prospecto", "items": ["Aguas Andinas", "Enel X", "Codelco", "Sodimac", "Achs"]},
+      {"name": "Contactado", "items": ["SQM", "Bupa", "Lipigas", "SMU"]},
+      {"name": "Propuesta", "items": ["Arauco", "Essbio", "Copec"]},
+      {"name": "Adjudicado", "items": ["OEnergy", "Municipalidad de Buin"]}
+    ]
+  }
+}

@@ -22,7 +22,9 @@ const RAGExplorer = lazy(() => import('./pages/RAGExplorer'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Acreditacion = lazy(() => import('./pages/Acreditacion'));
 const Finanzas = lazy(() => import('./pages/Finanzas'));
-const Convenios = lazy(() => import('./pages/Convenios'));
+const VCM = lazy(() => import('./pages/VCM'));
+const OTEC = lazy(() => import('./pages/OTEC'));
+const Inteligencia = lazy(() => import('./pages/Inteligencia'));
 const Install = lazy(() => import('./pages/Install'));
 const Login = lazy(() => import('./pages/Login'));
 const CommandPalette = lazy(() => import('./components/shared/CommandPalette').then(m => ({ default: m.CommandPalette })));
@@ -82,7 +84,10 @@ function AuthenticatedApp() {
               <Route path="/rag" element={<RAGExplorer />} />
               <Route path="/acreditacion" element={<Acreditacion />} />
               <Route path="/finanzas" element={<Finanzas />} />
-              <Route path="/convenios" element={<Convenios />} />
+              <Route path="/vcm" element={<VCM />} />
+              <Route path="/otec" element={<OTEC />} />
+              <Route path="/inteligencia" element={<Inteligencia />} />
+              <Route path="/convenios" element={<Navigate to="/vcm" replace />} />
               <Route path="/install" element={<Install />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>

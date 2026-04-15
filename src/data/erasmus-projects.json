@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Minds On Earth",
+    "type": "CBVET 2026",
+    "status": "active",
+    "coordinator": "Sebastian",
+    "budget_eur": 500000,
+    "focus": "Educacion ambiental y tierra",
+    "drive_url": "https://drive.google.com/drive/u/0/folders/1269R_rvoXeS5DQVrdI9LGaSjDbvmLeDN",
+    "doc_url": "https://docs.google.com/document/d/1HNEuQlK7K3KqTe8AUi0D0dqLxDak8oVaereGfCesZSA/edit"
+  },
+  {
+    "name": "Blue Economy Lab",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Kajo Stelter",
+    "budget_eur": 180000,
+    "focus": "Economia azul y recursos maritimos",
+    "drive_url": "",
+    "doc_url": ""
+  },
+  {
+    "name": "DualTech LATAM",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Lorena",
+    "budget_eur": 150000,
+    "focus": "Formacion dual tecnico profesional",
+    "drive_url": "",
+    "doc_url": ""
+  },
+  {
+    "name": "GENERA",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Luis Ageitos",
+    "budget_eur": 160000,
+    "focus": "Transicion energetica",
+    "drive_url": "",
+    "doc_url": ""
+  },
+  {
+    "name": "ENJOY",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Sebastian",
+    "budget_eur": 120000,
+    "focus": "Innovacion educativa internacional",
+    "drive_url": "",
+    "doc_url": ""
+  },
+  {
+    "name": "Turismo Inclusivo",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Sebastian",
+    "budget_eur": 110000,
+    "focus": "Accesibilidad y turismo inclusivo",
+    "drive_url": "",
+    "doc_url": ""
+  },
+  {
+    "name": "TERRA",
+    "type": "KA2",
+    "status": "active",
+    "coordinator": "Sebastian",
+    "budget_eur": 130000,
+    "focus": "Sustentabilidad y territorio",
+    "drive_url": "",
+    "doc_url": ""
+  }
+]

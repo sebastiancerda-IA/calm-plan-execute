@@ -1,412 +1,131 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { ArrowDownRight, ArrowUpRight, CircleDollarSign, TrendingUp } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { MetricTile } from '@/components/shared/MetricTile';
-import { useInstitutionalMetrics } from '@/hooks/useInstitutionalMetrics';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Lock, Send, Bot, Shield, Loader2, Sparkles, Cpu, Download } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
-import { exportFinancialRecords } from '@/lib/exportUtils';
-import { getSupabasePublishableKey, getSupabaseUrl } from '@/lib/supabaseRuntime';
-import { BudgetBuilder } from '@/components/finanzas/BudgetBuilder';
-import { ProposalBuilder } from '@/components/finanzas/ProposalBuilder';
+import { useOrquestaLiveOverlay } from '@/hooks/useOrquestaLiveOverlay';
+import finanzasData from '@/data/finanzas-data.json';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+function clp(value: number) {
+  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
+}
 
-const AI_MODELS = [
-  { id: 'google/gemini-3-flash-preview', label: 'Gemini Flash', desc: 'Rápido y eficiente' },
-  { id: 'google/gemini-2.5-pro', label: 'Gemini Pro', desc: 'Razonamiento profundo' },
-  { id: 'openai/gpt-5', label: 'GPT-5', desc: 'Máxima precisión' },
-  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', desc: 'Balance costo/calidad' },
-];
-
-const SUGGESTIONS = [
-  '¿Cuál es nuestra estructura de costos actual?',
-  'Proyección de flujo de caja a 6 meses',
-  '¿Cómo optimizar el margen operativo?',
-  'Análisis de rentabilidad por programa OTEC',
-  'Riesgos tributarios actuales',
-  'Estrategia para diversificar ingresos',
-];
-
-function FinancialChat() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'analista' | 'auditor'>('analista');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { data: recordCount = 0 } = useQuery({
-    queryKey: ['financial_count'],
-    queryFn: async () => {
-      const { count } = await supabase.from('financial_records').select('*', { count: 'exact', head: true });
-      return count || 0;
-    },
-  });
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
-
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isLoading) return;
-    const userMsg: Msg = { role: 'user', content: text.trim() };
-    const allMessages = [...messages, userMsg];
-    setMessages(allMessages);
-    setInput('');
-    setIsLoading(true);
-
-    let assistantContent = '';
-
-    try {
-      const resp = await fetch(`${getSupabaseUrl()}/functions/v1/financial-advisor`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          apikey: getSupabasePublishableKey(),
-        },
-        body: JSON.stringify({ messages: allMessages, mode }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Error desconocido' }));
-        if (resp.status === 429) toast.error('Límite de requests. Espera un momento.');
-        else if (resp.status === 403) toast.error('Acceso restringido.');
-        else toast.error(err.error || 'Error del asesor');
-        setIsLoading(false);
-        return;
-      }
-
-      const data = await resp.json();
-      assistantContent = data.content || '—';
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantContent }]);
-    } catch (e) {
-      console.error(e);
-      toast.error('Error de conexión con el asesor');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [messages, isLoading, mode]);
-
-  const handleModelChange = (val: string) => {
-    setSelectedModel(val);
-    localStorage.setItem('fin_model', val);
-  };
-
-  return (
-    <div className="flex flex-col h-[calc(100vh-220px)] min-h-[400px]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {(['analista', 'auditor'] as const).map(m => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  mode === m
-                    ? m === 'analista'
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'bg-destructive/20 text-destructive border border-destructive/30'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                {m === 'analista' ? <Bot size={12} /> : <Shield size={12} />}
-                {m === 'analista' ? 'Analista' : 'Auditor'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1">
-                  <Cpu size={10} className="text-muted-foreground" />
-                  <Select value={selectedModel} onValueChange={handleModelChange}>
-                    <SelectTrigger className="h-7 w-[130px] text-[10px] border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AI_MODELS.map(m => (
-                        <SelectItem key={m.id} value={m.id} className="text-xs">
-                          <span>{m.label}</span>
-                          <span className="text-muted-foreground ml-1">— {m.desc}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">Modelo de IA</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
-            {recordCount} registros financieros
-          </span>
-        </div>
-      </div>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 pr-1">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-            <Sparkles size={32} className="text-primary/40" />
-            <div>
-              <p className="text-sm text-foreground font-medium">Asesor Financiero IA</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {mode === 'analista'
-                  ? 'Estrategias de optimización, proyecciones y análisis financiero'
-                  : 'Auditoría rigurosa, detección de riesgos e inconsistencias'}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
-              {SUGGESTIONS.map(s => (
-                <button
-                  key={s}
-                  onClick={() => sendMessage(s)}
-                  className="text-[11px] px-3 py-1.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors border border-border"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-foreground'
-            }`}>
-              <div className="whitespace-pre-wrap">{msg.content}</div>
-            </div>
-          </div>
-        ))}
-
-        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-          <div className="flex justify-start">
-            <div className="bg-secondary rounded-lg px-3 py-2">
-              <Loader2 size={14} className="animate-spin text-muted-foreground" />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input */}
-      <div className="mt-3 flex gap-2">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
-          placeholder={mode === 'analista' ? 'Consulta financiera...' : 'Pregunta de auditoría...'}
-          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          disabled={isLoading}
-        />
-        <button
-          onClick={() => sendMessage(input)}
-          disabled={!input.trim() || isLoading}
-          className="px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          <Send size={14} />
-        </button>
-      </div>
-    </div>
-  );
+function fmtMillion(value: number) {
+  return `${(value / 1_000_000).toFixed(1)}M`;
 }
 
 export default function Finanzas() {
-  const { isDirectorOrDG, role } = useAuth();
-  const { ingresosMensual, gastosMensual, balance, matriculasTotal } = useInstitutionalMetrics();
+  const { live, hasAnyLiveData } = useOrquestaLiveOverlay();
 
-  const { data: records = [] } = useQuery({
-    queryKey: ['financial_records'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('financial_records')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: isDirectorOrDG,
-  });
+  const chartData = finanzasData.months.map((month, i) => ({
+    month,
+    ingresos: finanzasData.ingresos[i],
+    egresos: finanzasData.egresos[i],
+    saldo: finanzasData.saldo_acumulado[i],
+  }));
 
-  if (!isDirectorOrDG) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Lock size={48} className="text-muted-foreground" />
-        <h2 className="text-lg font-semibold text-foreground">Acceso Restringido</h2>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
-          El módulo financiero está disponible solo para el Director y la Directora General.
-        </p>
-        <p className="text-xs text-muted-foreground font-mono">
-          Tu rol actual: <span className="text-primary">{role.toUpperCase()}</span>
-        </p>
-      </div>
-    );
-  }
-
-  const balanceNum = Number(balance);
-  const ingresosNum = Number(ingresosMensual);
-  const gastosNum = Number(gastosMensual);
-  const margen = ingresosNum > 0 ? ((balanceNum / ingresosNum) * 100).toFixed(1) : '0';
-  const ingresoPorAlumno = matriculasTotal > 0 ? Math.round(ingresosNum / Number(matriculasTotal)) : 0;
-
-  const ingresos = records.filter(r => r.record_type === 'ingreso');
-  const gastos = records.filter(r => r.record_type === 'gasto');
+  const mesesCriticos = chartData.filter((m) => m.saldo < 0).map((m) => m.month);
+  const ingresosTotal = finanzasData.ingresos.reduce((a, b) => a + b, 0);
+  const egresosTotal = finanzasData.egresos.reduce((a, b) => a + b, 0);
+  const balanceTotal = ingresosTotal - egresosTotal;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'Finanzas' }]} />
 
-      <div className="flex items-center gap-3">
-        <DollarSign size={20} className="text-primary" />
-        <h1 className="text-xl font-semibold text-foreground">Centro Financiero</h1>
-        <span className="text-[9px] font-mono bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">
-          CONFIDENCIAL
-        </span>
-      </div>
-
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="dashboard" className="text-xs">Dashboard</TabsTrigger>
-          <TabsTrigger value="presupuestos" className="text-xs">Presupuestos</TabsTrigger>
-          <TabsTrigger value="propuestas" className="text-xs">Propuestas</TabsTrigger>
-          <TabsTrigger value="asesor" className="text-xs">Consultar Asesor</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard">
-          {/* Export button */}
-          {records.length > 0 && (
-            <div className="flex justify-end mb-3">
-              <button
-                onClick={() => exportFinancialRecords(records)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded px-2.5 py-1.5"
-              >
-                <Download size={12} /> Exportar CSV
-              </button>
-            </div>
-          )}
-          {/* KPI Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <MetricTile
-              label="Ingresos mensual"
-              value={`$${(ingresosNum / 1000000).toFixed(1)}M`}
-              trend="up"
-              suffix="CLP"
-              color="hsl(var(--primary))"
-              sparkline={[12, 14, 13, 15, 14, 16, ingresosNum / 1000000]}
-            />
-            <MetricTile
-              label="Gastos mensual"
-              value={`$${(gastosNum / 1000000).toFixed(1)}M`}
-              trend="down"
-              suffix="CLP"
-              color="hsl(var(--destructive))"
-              sparkline={[10, 11, 12, 11, 13, 12, gastosNum / 1000000]}
-            />
-            <MetricTile
-              label="Balance"
-              value={`$${(balanceNum / 1000000).toFixed(1)}M`}
-              trend={balanceNum > 0 ? 'up' : 'down'}
-              suffix={`Margen: ${margen}%`}
-              color={balanceNum > 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}
-              sparkline={[2, 3, 1, 4, 1, 4, balanceNum / 1000000]}
-            />
-            <MetricTile
-              label="Ingreso por alumno"
-              value={`$${(ingresoPorAlumno / 1000).toFixed(0)}K`}
-              trend="stable"
-              suffix="CLP mensual"
-              color="hsl(var(--accent-foreground))"
-              sparkline={[20, 22, 21, 23, 22, 24, ingresoPorAlumno / 1000]}
-            />
+      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Panel financiero</p>
+            <h1 className="mt-1 text-2xl font-semibold text-foreground">Flujo de caja y sostenibilidad</h1>
+            <p className="mt-2 text-sm text-muted-foreground max-w-3xl">
+              Narrativa visual de ingresos, egresos y liquidez para detectar meses de riesgo antes de que impacten la operacion.
+            </p>
           </div>
+          <span className={`rounded-full border px-2.5 py-1 text-xs ${hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
+            {hasAnyLiveData ? 'Overlay live habilitado' : 'Base estandar cargada'}
+          </span>
+        </div>
+      </section>
 
-          {balanceNum < 0 && (
-            <div className="flex items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 mb-4">
-              <AlertTriangle size={16} className="text-destructive" />
-              <p className="text-xs text-destructive">
-                Balance negativo. Revisar estructura de costos y proyección de ingresos.
-              </p>
-            </div>
-          )}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <article className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ArrowUpRight size={14} /> Ingresos anuales proyectados</div>
+          <p className="mt-3 text-3xl font-semibold text-emerald-400">{clp(ingresosTotal)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Promedio mensual: {clp(Math.round(ingresosTotal / 12))}</p>
+        </article>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-md border border-border bg-card p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-primary" />
-                <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                  Ingresos ({ingresos.length})
-                </h3>
+        <article className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ArrowDownRight size={14} /> Egresos anuales proyectados</div>
+          <p className="mt-3 text-3xl font-semibold text-rose-400">{clp(egresosTotal)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Promedio mensual: {clp(Math.round(egresosTotal / 12))}</p>
+        </article>
+
+        <article className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground"><CircleDollarSign size={14} /> Balance anual proyectado</div>
+          <p className={`mt-3 text-3xl font-semibold ${balanceTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{clp(balanceTotal)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Live balance mensual: <span className="font-mono text-foreground">{live.balanceMensual !== null ? clp(live.balanceMensual || 0) : 'sin datos'}</span>
+          </p>
+        </article>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground">Ingresos vs egresos por mes</h2>
+          <span className="text-xs text-muted-foreground">Valores en MM CLP</span>
+        </div>
+        <div className="mt-4 h-[340px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+              <YAxis yAxisId="left" tickFormatter={(v) => `${Math.round(v / 1_000_000)}`} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${Math.round(v / 1_000_000)}`} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+              <Tooltip
+                formatter={(value: number, key: string) => [fmtMillion(value), key === 'ingresos' ? 'Ingresos' : key === 'egresos' ? 'Egresos' : 'Saldo acumulado']}
+              />
+              <Legend />
+              <Bar yAxisId="left" dataKey="ingresos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+              <Bar yAxisId="left" dataKey="egresos" fill="#f97316" radius={[6, 6, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="saldo" stroke="#22c55e" strokeWidth={2} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <article className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={14} className="text-emerald-400" />
+            <h3 className="text-sm font-medium text-foreground">Breakdown ingresos</h3>
+          </div>
+          <div className="mt-4 space-y-2 text-xs">
+            {Object.entries(finanzasData.ingresos_breakdown).map(([key, value]) => (
+              <div key={key} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                <span className="text-muted-foreground">{key.replaceAll('_', ' ')}</span>
+                <span className="font-mono text-foreground">{clp(value as number)}</span>
               </div>
-              {ingresos.length > 0 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {ingresos.map(r => (
-                    <div key={r.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                      <div>
-                        <p className="text-xs text-foreground">{r.concept}</p>
-                        <p className="text-[10px] text-muted-foreground">{r.category} · {r.period}</p>
-                      </div>
-                      <span className="text-xs font-mono text-primary">
-                        +${(r.amount / 1000000).toFixed(1)}M
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">Sin registros. Carga datos financieros vía n8n o API Bridge.</p>
-              )}
-            </div>
+            ))}
+          </div>
+        </article>
 
-            <div className="rounded-md border border-border bg-card p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingDown size={14} className="text-destructive" />
-                <h3 className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                  Gastos ({gastos.length})
-                </h3>
-              </div>
-              {gastos.length > 0 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {gastos.map(r => (
-                    <div key={r.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                      <div>
-                        <p className="text-xs text-foreground">{r.concept}</p>
-                        <p className="text-[10px] text-muted-foreground">{r.category} · {r.period}</p>
-                      </div>
-                      <span className="text-xs font-mono text-destructive">
-                        -${(r.amount / 1000000).toFixed(1)}M
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">Sin registros. Carga datos financieros vía n8n o API Bridge.</p>
-              )}
+        <article className="rounded-2xl border border-border bg-card p-5">
+          <h3 className="text-sm font-medium text-foreground">Riesgo y morosidad</h3>
+          <div className="mt-4 space-y-3 text-xs">
+            <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
+              Morosidad historica 2025: <span className="font-mono text-foreground">{clp(finanzasData.morosidad.historica_2025)}</span>
+            </div>
+            <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
+              Recuperacion 2026: <span className="font-mono text-foreground">{clp(finanzasData.morosidad.recuperacion_2026)}</span>
+            </div>
+            <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
+              Default activo: <span className="font-mono text-foreground">{finanzasData.morosidad.default_porcentaje}%</span>
+            </div>
+            <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-300">
+              Meses criticos: <span className="font-mono">{mesesCriticos.join(', ') || 'sin deficit'}</span>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="presupuestos">
-          <BudgetBuilder />
-        </TabsContent>
-
-        <TabsContent value="propuestas">
-          <ProposalBuilder />
-        </TabsContent>
-
-        <TabsContent value="asesor">
-          <FinancialChat />
-        </TabsContent>
-      </Tabs>
+        </article>
+      </section>
     </div>
   );
 }

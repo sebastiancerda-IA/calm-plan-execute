@@ -1,0 +1,18 @@
+[
+  {"id":"C1","nombre":"Diseno y actualizacion curricular","nivel":"N2","responsable":"Rectoria","area":"Academico","descripcion":"Mallas y resultados de aprendizaje actualizados","evidencia_ia":"partial","acciones_pendientes":["Cerrar brechas por carrera"]},
+  {"id":"C2","nombre":"Procesos de ensenanza","nivel":"N2","responsable":"Rectoria","area":"Academico","descripcion":"Metodologias activas y acompanamiento","evidencia_ia":"partial","acciones_pendientes":["Estandarizar rubricas"]},
+  {"id":"C3","nombre":"Trayectoria estudiantil","nivel":"N2","responsable":"Rectoria","area":"Academico","descripcion":"Retencion y progresion","evidencia_ia":"partial","acciones_pendientes":["Plan de tutorias"]},
+  {"id":"C4","nombre":"Vinculo formacion empleo","nivel":"N1","responsable":"VCM","area":"Academico","descripcion":"Practicas y empleabilidad","evidencia_ia":"low","acciones_pendientes":["Integrar seguimiento egresados"]},
+  {"id":"C5","nombre":"Resultados y mejora","nivel":"N2","responsable":"Calidad","area":"Academico","descripcion":"Uso de indicadores para mejora","evidencia_ia":"partial","acciones_pendientes":["Consolidar tablero unico"]},
+  {"id":"C6","nombre":"Gobierno institucional","nivel":"N2","responsable":"Rectoria","area":"Gestion","descripcion":"Gobernanza y toma de decisiones","evidencia_ia":"partial","acciones_pendientes":["Actualizar actas clave"]},
+  {"id":"C7","nombre":"Relacion con entorno","nivel":"N3","responsable":"VCM","area":"Gestion","descripcion":"Convenios y articulacion territorial","evidencia_ia":"high","acciones_pendientes":[]},
+  {"id":"C8","nombre":"Sostenibilidad financiera","nivel":"N1","responsable":"DG","area":"Gestion","descripcion":"Sustentabilidad economica y control","evidencia_ia":"low","acciones_pendientes":["Formalizar plan anti deficit"]},
+  {"id":"C9","nombre":"Recursos para el proyecto","nivel":"N2","responsable":"DG","area":"Gestion","descripcion":"Infraestructura y recursos de apoyo","evidencia_ia":"partial","acciones_pendientes":["Actualizar plan de inversiones"]},
+  {"id":"C10","nombre":"Aseguramiento de la calidad","nivel":"N2","responsable":"Calidad","area":"Calidad","descripcion":"Sistema interno y ciclos de mejora","evidencia_ia":"partial","acciones_pendientes":["Formalizar politicas por area"]},
+  {"id":"C11","nombre":"Cuerpo academico","nivel":"N2","responsable":"Rectoria","area":"Calidad","descripcion":"Gestion docente y evaluacion","evidencia_ia":"partial","acciones_pendientes":["Plan de perfeccionamiento"]},
+  {"id":"C12","nombre":"Informacion para decision","nivel":"N2","responsable":"Calidad","area":"Calidad","descripcion":"Datos confiables para gestion","evidencia_ia":"partial","acciones_pendientes":["Unificar fuentes"]},
+  {"id":"C13","nombre":"Pertinencia de la VCM","nivel":"N3","responsable":"Sebastian","area":"VCM","descripcion":"Alineacion de VCM con mision","evidencia_ia":"high","acciones_pendientes":[]},
+  {"id":"C14","nombre":"Implementacion VCM","nivel":"N2","responsable":"Sebastian","area":"VCM","descripcion":"Resultados de proyectos y convenios","evidencia_ia":"partial","acciones_pendientes":["Cerrar trazabilidad de impacto"]},
+  {"id":"C15","nombre":"Contribucion territorial","nivel":"N3","responsable":"Sebastian","area":"VCM","descripcion":"Impacto local y articulacion sectorial","evidencia_ia":"high","acciones_pendientes":[]},
+  {"id":"C16","nombre":"Redes y cooperacion","nivel":"N2","responsable":"Sebastian","area":"VCM","descripcion":"Participacion en redes y proyectos internacionales","evidencia_ia":"partial","acciones_pendientes":["Completar evidencias de movilidad"]}
+]

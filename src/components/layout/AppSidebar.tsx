@@ -1,6 +1,12 @@
 import {
-  LayoutDashboard, Users, Shield, AlertTriangle, Database, Settings,
-  GraduationCap, DollarSign, Handshake,
+  LayoutDashboard,
+  Shield,
+  Settings,
+  GraduationCap,
+  DollarSign,
+  Handshake,
+  BriefcaseBusiness,
+  Bot,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -9,13 +15,12 @@ import { useRAGCount } from '@/hooks/useRAGCount';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard, restricted: false },
-  { title: 'Agentes', url: '/agents', icon: Users, restricted: false },
   { title: 'CNA Matrix', url: '/cna', icon: Shield, restricted: false },
-  { title: 'Acreditación', url: '/acreditacion', icon: GraduationCap, restricted: false },
+  { title: 'Acreditacion 2027', url: '/acreditacion', icon: GraduationCap, restricted: false },
   { title: 'Finanzas', url: '/finanzas', icon: DollarSign, restricted: true },
-  { title: 'Convenios', url: '/convenios', icon: Handshake, restricted: false },
-  { title: 'Alertas', url: '/alerts', icon: AlertTriangle, restricted: false },
-  { title: 'RAG Explorer', url: '/rag', icon: Database, restricted: false, showBadge: true },
+  { title: 'VCM y Convenios', url: '/vcm', icon: Handshake, restricted: false },
+  { title: 'OTEC Pipeline', url: '/otec', icon: BriefcaseBusiness, restricted: false },
+  { title: 'Inteligencia IA', url: '/inteligencia', icon: Bot, restricted: false, showBadge: true },
   { title: 'Settings', url: '/settings', icon: Settings, restricted: false },
 ];
 
@@ -33,7 +38,7 @@ export function AppSidebar({ open = true }: AppSidebarProps) {
     return location.pathname.startsWith(url);
   };
 
-  const visibleItems = navItems.filter(item => !item.restricted || isDirectorOrDG);
+  const visibleItems = navItems.filter((item) => !item.restricted || isDirectorOrDG);
 
   return (
     <aside className={`${open ? 'w-64' : 'w-0'} hidden md:flex shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-linear overflow-hidden`}>

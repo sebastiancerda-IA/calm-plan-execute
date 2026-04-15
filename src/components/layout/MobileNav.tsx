@@ -3,18 +3,18 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
-  Users,
-  AlertTriangle,
+  DollarSign,
   GraduationCap,
-  MoreHorizontal,
+  Handshake,
+  Bot,
 } from 'lucide-react';
 
 const tabs = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
-  { to: '/agents', icon: Users, label: 'Agentes' },
-  { to: '/alerts', icon: AlertTriangle, label: 'Alertas' },
-  { to: '/acreditacion', icon: GraduationCap, label: 'Acredit.' },
-  { to: '/settings', icon: MoreHorizontal, label: 'Más' },
+  { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
+  { to: '/acreditacion', icon: GraduationCap, label: 'CNA' },
+  { to: '/vcm', icon: Handshake, label: 'VCM' },
+  { to: '/inteligencia', icon: Bot, label: 'IA' },
 ];
 
 export const MobileNav = memo(function MobileNav() {
