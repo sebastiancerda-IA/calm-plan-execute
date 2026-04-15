@@ -1,6 +1,18 @@
 import { ArrowDownRight, ArrowUpRight, CircleDollarSign, TrendingUp } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { PanelHeader, TerminalBadge } from '@/components/orquesta';
 import { useOrquestaLiveOverlay } from '@/hooks/useOrquestaLiveOverlay';
 import finanzasData from '@/data/finanzas-data.json';
 
@@ -27,23 +39,30 @@ export default function Finanzas() {
   const egresosTotal = finanzasData.egresos.reduce((a, b) => a + b, 0);
   const balanceTotal = ingresosTotal - egresosTotal;
 
+  const { historica_2025: moroHist, recuperacion_2026: moroRec } = finanzasData.morosidad;
+  const moroTotal = moroHist + moroRec;
+  const pctHist = moroTotal > 0 ? Math.round((moroHist / moroTotal) * 100) : 0;
+  const pctRec = moroTotal > 0 ? Math.round((moroRec / moroTotal) * 100) : 0;
+
+  const overlayBadge = overlayLoading ? (
+    <TerminalBadge variant="sync">Sincronizando overlay…</TerminalBadge>
+  ) : hasAnyLiveData ? (
+    <TerminalBadge variant="live">Overlay live</TerminalBadge>
+  ) : (
+    <TerminalBadge variant="static">Base estándar</TerminalBadge>
+  );
+
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'Finanzas' }]} />
 
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Panel financiero</p>
-            <h1 className="mt-1 text-2xl font-semibold text-foreground">Flujo de caja y sostenibilidad</h1>
-            <p className="mt-2 text-sm text-muted-foreground max-w-3xl">
-              Narrativa visual de ingresos, egresos y liquidez para detectar meses de riesgo antes de que impacten la operacion.
-            </p>
-          </div>
-          <span className={`rounded-full border px-2.5 py-1 text-xs ${overlayLoading ? 'border-blue-500/40 text-blue-300 bg-blue-500/10' : hasAnyLiveData ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'}`}>
-            {overlayLoading ? 'Sincronizando overlay…' : hasAnyLiveData ? 'Overlay live habilitado' : 'Base estándar cargada'}
-          </span>
-        </div>
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5 md:p-6">
+        <PanelHeader
+          kicker="Panel financiero"
+          title="Flujo de caja y sostenibilidad"
+          description="Ingresos vs egresos por mes; meses con saldo acumulado negativo resaltados. Morosidad como tracker comparativo."
+          right={overlayBadge}
+        />
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -84,8 +103,22 @@ export default function Finanzas() {
                 formatter={(value: number, key: string) => [fmtMillion(value), key === 'ingresos' ? 'Ingresos' : key === 'egresos' ? 'Egresos' : 'Saldo acumulado']}
               />
               <Legend />
-              <Bar yAxisId="left" dataKey="ingresos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-              <Bar yAxisId="left" dataKey="egresos" fill="#f97316" radius={[6, 6, 0, 0]} />
+              <Bar yAxisId="left" dataKey="ingresos" radius={[6, 6, 0, 0]}>
+                {chartData.map((entry, i) => (
+                  <Cell
+                    key={`in-${i}`}
+                    fill={entry.saldo < 0 ? 'rgba(59,130,246,0.35)' : 'hsl(var(--primary))'}
+                  />
+                ))}
+              </Bar>
+              <Bar yAxisId="left" dataKey="egresos" radius={[6, 6, 0, 0]}>
+                {chartData.map((entry, i) => (
+                  <Cell
+                    key={`eg-${i}`}
+                    fill={entry.saldo < 0 ? 'rgba(239,68,68,0.55)' : '#f97316'}
+                  />
+                ))}
+              </Bar>
               <Line yAxisId="right" type="monotone" dataKey="saldo" stroke="#22c55e" strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -110,18 +143,32 @@ export default function Finanzas() {
 
         <article className="rounded-2xl border border-border bg-card p-5">
           <h3 className="text-sm font-medium text-foreground">Riesgo y morosidad</h3>
-          <div className="mt-4 space-y-3 text-xs">
-            <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
-              Morosidad historica 2025: <span className="font-mono text-foreground">{clp(finanzasData.morosidad.historica_2025)}</span>
+          <p className="mt-1 text-[11px] text-muted-foreground">Tracker: peso histórico vs meta de recuperación (mismos montos JSON).</p>
+          <div className="mt-4 space-y-4 text-xs">
+            <div>
+              <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
+                <span>Histórico 2025</span>
+                <span className="font-mono text-foreground">{clp(moroHist)} · {pctHist}%</span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="h-full rounded-full bg-rose-500/90" style={{ width: `${pctHist}%` }} />
+              </div>
             </div>
-            <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
-              Recuperacion 2026: <span className="font-mono text-foreground">{clp(finanzasData.morosidad.recuperacion_2026)}</span>
+            <div>
+              <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
+                <span>Recuperación 2026 (meta)</span>
+                <span className="font-mono text-foreground">{clp(moroRec)} · {pctRec}%</span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="h-full rounded-full bg-emerald-500/90" style={{ width: `${pctRec}%` }} />
+              </div>
             </div>
             <div className="rounded-md border border-border px-3 py-2 text-muted-foreground">
               Default activo: <span className="font-mono text-foreground">{finanzasData.morosidad.default_porcentaje}%</span>
             </div>
-            <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-300">
-              Meses criticos: <span className="font-mono">{mesesCriticos.join(', ') || 'sin deficit'}</span>
+            <div className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-200">
+              Meses críticos (saldo acum. negativo):{' '}
+              <span className="font-mono">{mesesCriticos.join(', ') || 'sin déficit en serie'}</span>
             </div>
           </div>
         </article>

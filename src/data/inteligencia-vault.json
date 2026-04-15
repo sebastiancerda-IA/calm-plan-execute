@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "schema_version": "1",
+    "descripcion": "Metas y referencia del vault de conocimiento (RAG); contadores live se suman encima."
+  },
+  "vault": {
+    "documentos_objetivo": 500,
+    "categorias_activas": ["CNA", "Erasmus", "OTEC", "Finanzas", "VCM"],
+    "nota_operativa": "Los totales en vivo provienen de rag_documents; esta base fija el marco institucional."
+  },
+  "agentes_referencia": {
+    "A1": "Clasificación y enrutamiento de correo institucional",
+    "C1": "Asistente calidad / evidencia CNA (cuando aplica en flujo n8n)"
+  }
+}

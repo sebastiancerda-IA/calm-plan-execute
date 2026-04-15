@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bot, Database, Search } from 'lucide-react';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { PanelHeader, TerminalBadge } from '@/components/orquesta';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrquestaLiveOverlay } from '@/hooks/useOrquestaLiveOverlay';
 import cnaCriteria from '@/data/cna-criteria.json';
 import erasmusProjects from '@/data/erasmus-projects.json';
 import otecCatalog from '@/data/otec-catalog.json';
+import inteligenciaVault from '@/data/inteligencia-vault.json';
 
 function toCorpus() {
   return [
@@ -15,6 +17,16 @@ function toCorpus() {
     ...otecCatalog.diplomados.map((d) => ({ source: 'OTEC', title: d.name, body: `${d.area} ${d.hours} horas ${d.price}` })),
     ...otecCatalog.cursos.map((c) => ({ source: 'OTEC', title: c.name, body: `${c.hours} horas ${c.price}` })),
   ];
+}
+
+/** Etiquetas A1 (alta/crÌtica) y C1 (calidad/CNA) seg˙n prioridad/categorÌa. */
+function activityTags(log: { prioridad?: string | null; categoria?: string | null }) {
+  const p = (log.prioridad || '').toLowerCase();
+  const c = (log.categoria || '').toLowerCase();
+  const tags: string[] = [];
+  if (p === 'alta' || p === 'critica' || p === 'crÌtica') tags.push('A1');
+  if (c.includes('cna') || c.includes('calidad')) tags.push('C1');
+  return tags;
 }
 
 export default function Inteligencia() {
@@ -67,59 +79,106 @@ export default function Inteligencia() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'Inteligencia' }]} />
 
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
-        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">IA Activity Center</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">Operacion visible de agentes + RAG</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Monitoreo de actividad, volumen operativo y exploracion semantica de conocimiento institucional.</p>
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5 md:p-6">
+        <PanelHeader
+          kicker="IA Activity Center"
+          title="OperaciÛn visible ∑ agentes + RAG"
+          description="Feed de correo con etiquetas A1/C1 cuando aplica; b˙squeda demo sobre corpus JSON; vault con metas de referencia."
+        />
+      </section>
+
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
+        <p className="orquesta-section-kicker">Vault de conocimiento (referencia)</p>
+        <p className="mt-2 text-sm text-muted-foreground">{inteligenciaVault.vault.nota_operativa}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-border px-3 py-2 text-xs">
+            <p className="text-muted-foreground">Documentos objetivo (meta)</p>
+            <p className="mt-1 font-mono text-2xl text-foreground">{inteligenciaVault.vault.documentos_objetivo}</p>
+          </div>
+          <div className="rounded-lg border border-border px-3 py-2 text-xs">
+            <p className="text-muted-foreground">Docs RAG (live)</p>
+            <p className="mt-1 font-mono text-2xl text-cyan-300">{live.ragDocs ?? 'ó'}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {inteligenciaVault.vault.categorias_activas.map((cat) => (
+            <TerminalBadge key={cat} variant="neutral">
+              {cat}
+            </TerminalBadge>
+          ))}
+        </div>
+        <dl className="mt-4 space-y-2 border-t border-border pt-4 text-[11px] text-muted-foreground">
+          <div>
+            <dt className="font-mono text-primary">A1</dt>
+            <dd>{inteligenciaVault.agentes_referencia.A1}</dd>
+          </div>
+          <div>
+            <dt className="font-mono text-primary">C1</dt>
+            <dd>{inteligenciaVault.agentes_referencia.C1}</dd>
+          </div>
+        </dl>
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <article className="rounded-2xl border border-border bg-card p-5">
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
           <p className="text-xs text-muted-foreground">Emails procesados (24h)</p>
-          <p className="mt-2 text-3xl font-semibold text-foreground font-mono">{live.emails24h || 0}</p>
+          <p className="orquesta-kpi-value mt-2">{live.emails24h || 0}</p>
         </article>
-        <article className="rounded-2xl border border-border bg-card p-5">
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
           <p className="text-xs text-muted-foreground">Urgentes (24h)</p>
-          <p className="mt-2 text-3xl font-semibold text-amber-300 font-mono">{live.urgent24h || 0}</p>
+          <p className="orquesta-kpi-value mt-2 !text-amber-300">{live.urgent24h || 0}</p>
         </article>
-        <article className="rounded-2xl border border-border bg-card p-5">
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
           <p className="text-xs text-muted-foreground">Agentes activos</p>
-          <p className="mt-2 text-3xl font-semibold text-foreground font-mono">{live.activeAgents || 0}</p>
+          <p className="orquesta-kpi-value mt-2">{live.activeAgents || 0}</p>
         </article>
-        <article className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-xs text-muted-foreground">RAG docs</p>
-          <p className="mt-2 text-3xl font-semibold text-cyan-300 font-mono">{live.ragDocs || 0}</p>
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
+          <p className="text-xs text-muted-foreground">RAG docs (live)</p>
+          <p className="orquesta-kpi-value mt-2 !text-cyan-300">{live.ragDocs || 0}</p>
         </article>
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-border bg-card p-5">
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
           <div className="flex items-center gap-2">
             <Bot size={15} className="text-primary" />
-            <h2 className="text-sm font-medium text-foreground">Feed reciente de actividad</h2>
+            <h2 className="text-sm font-medium text-foreground">Feed reciente (A1 / C1 cuando aplica)</h2>
           </div>
           <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1 text-xs">
-            {logsQuery.isLoading && <p className="text-muted-foreground">Cargando actividadù</p>}
+            {logsQuery.isLoading && <p className="text-muted-foreground">Cargando actividadÖ</p>}
             {logsQuery.isError && <p className="text-destructive">No se pudo cargar email_logs.</p>}
-            {!logsQuery.isLoading && logs.map((log: any) => (
-              <div key={log.id} className="rounded-md border border-border px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-foreground line-clamp-1">{log.asunto || 'Sin asunto'}</p>
-                  <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{log.prioridad || 'normal'}</span>
-                </div>
-                <p className="mt-1 text-muted-foreground">{log.categoria || 'sin categoria'} ù {log.agent_id || 'sin agente'}</p>
-              </div>
-            ))}
+            {!logsQuery.isLoading &&
+              logs.map((log: { id: string; asunto?: string; categoria?: string; prioridad?: string; agent_id?: string }) => {
+                const tags = activityTags(log);
+                return (
+                  <div key={log.id} className="rounded-md border border-border px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="line-clamp-1 text-foreground">{log.asunto || 'Sin asunto'}</p>
+                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                        {tags.map((t) => (
+                          <span key={t} className="rounded border border-primary/40 bg-primary/10 px-1 py-0.5 font-mono text-[9px] text-primary">
+                            {t}
+                          </span>
+                        ))}
+                        <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{log.prioridad || 'normal'}</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      {log.categoria || 'sin categorÌa'} ∑ {log.agent_id || 'sin agente'}
+                    </p>
+                  </div>
+                );
+              })}
             {!logsQuery.isLoading && !logsQuery.isError && logs.length === 0 && (
               <p className="text-muted-foreground">Sin actividad reciente en email_logs.</p>
             )}
           </div>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-5">
+        <article className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
           <div className="flex items-center gap-2">
             <Search size={15} className="text-cyan-300" />
-            <h2 className="text-sm font-medium text-foreground">RAG search rapido (demo)</h2>
+            <h2 className="text-sm font-medium text-foreground">RAG search r·pido (demo)</h2>
           </div>
           <label className="relative mt-3 block">
             <Search size={13} className="absolute left-2 top-2.5 text-muted-foreground" />
@@ -135,20 +194,20 @@ export default function Inteligencia() {
             {searchResults.map((item, idx) => (
               <div key={`${item.title}-${idx}`} className="rounded-md border border-border px-3 py-2">
                 <p className="text-foreground">{item.title}</p>
-                <p className="mt-1 text-muted-foreground">{item.source} ù {item.body}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {item.source} ∑ {item.body}
+                </p>
               </div>
             ))}
             {query && searchResults.length === 0 && <p className="text-muted-foreground">Sin resultados en el corpus demo.</p>}
             {!query && <p className="text-muted-foreground">Ingresa una consulta para explorar el conocimiento consolidado.</p>}
           </div>
 
-          <div className="mt-4 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground inline-flex flex-wrap items-center gap-1">
+          <div className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground">
             <Database size={12} /> ⁄ltimos documentos RAG live:{' '}
             {ragQuery.isLoading && <span>cargandoÖ</span>}
             {ragQuery.isError && <span className="text-destructive">error al cargar</span>}
-            {!ragQuery.isLoading && !ragQuery.isError && (
-              <span className="font-mono text-foreground">{ragDocs.length}</span>
-            )}
+            {!ragQuery.isLoading && !ragQuery.isError && <span className="font-mono text-foreground">{ragDocs.length}</span>}
           </div>
         </article>
       </section>

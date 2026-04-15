@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react';
-import { BadgeDollarSign, Building2, Calculator, Rocket } from 'lucide-react';
+import { BadgeDollarSign, Building2, Calculator, Kanban } from 'lucide-react';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { PanelHeader } from '@/components/orquesta';
 import otecCatalog from '@/data/otec-catalog.json';
+import otecPipelineEmpresas from '@/data/otec-pipeline-empresas.json';
+
+const ETAPA_LABEL: Record<string, string> = {
+  prospecto: 'Prospecto',
+  negociacion: 'Negociación',
+  propuesta_enviada: 'Propuesta enviada',
+  cerrado: 'Cerrado',
+};
 
 function clp(value: number) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
@@ -25,14 +34,27 @@ export default function OTEC() {
     };
   }, [cohortesDiplomado, alumnosDiplomado, cohortesCurso, alumnosCurso]);
 
+  const pipelineByEtapa = useMemo(() => {
+    const order = otecPipelineEmpresas.meta.etapas as string[];
+    const map = new Map<string, typeof otecPipelineEmpresas.empresas>();
+    order.forEach((e) => map.set(e, []));
+    otecPipelineEmpresas.empresas.forEach((emp) => {
+      const list = map.get(emp.etapa);
+      if (list) list.push(emp);
+    });
+    return { order, map };
+  }, []);
+
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'OTEC Pipeline' }]} />
 
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
-        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Unidad comercial</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">OTEC-AMA · Pipeline de ingresos</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Catalogo formativo + simulador de revenue + pipeline empresarial para activar caja nueva.</p>
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5 md:p-6">
+        <PanelHeader
+          kicker="Unidad comercial · OTEC-AMA"
+          title="Pipeline de ingresos"
+          description="Catálogo formativo, calculadora de revenue y Kanban de empresas (JSON). Sustituir datos de ejemplo por pipeline real."
+        />
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -66,7 +88,7 @@ export default function OTEC() {
             </div>
 
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-              <p className="text-[11px] text-emerald-300">Estimacion anual</p>
+              <p className="text-[11px] text-emerald-300">Estimación anual</p>
               <p className="mt-1 text-3xl font-semibold text-foreground">{clp(calc.total)}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">Diplomados: {clp(calc.ingresoDipl)} · Cursos: {clp(calc.ingresoCursos)}</p>
             </div>
@@ -76,7 +98,7 @@ export default function OTEC() {
         <article className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-2">
             <BadgeDollarSign size={16} className="text-emerald-400" />
-            <h2 className="text-sm font-medium text-foreground">Catalogo formativo</h2>
+            <h2 className="text-sm font-medium text-foreground">Catálogo formativo</h2>
           </div>
 
           <div className="mt-4 space-y-4 text-xs">
@@ -93,7 +115,7 @@ export default function OTEC() {
             </div>
             <div>
               <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">Cursos</p>
-              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+              <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
                 {otecCatalog.cursos.map((item) => (
                   <div key={item.name} className="rounded-md border border-border px-3 py-2">
                     <p className="text-foreground">{item.name}</p>
@@ -106,27 +128,46 @@ export default function OTEC() {
         </article>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5">
-        <div className="flex items-center gap-2">
-          <Rocket size={16} className="text-cyan-400" />
-          <h2 className="text-sm font-medium text-foreground">Pipeline empresas ({otecCatalog.pipeline.target_companies} objetivo)</h2>
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5">
+        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <Kanban size={16} className="text-cyan-400" />
+            <h2 className="text-sm font-medium text-foreground">Kanban empresas ({otecPipelineEmpresas.empresas.length})</h2>
+          </div>
+          <p className="text-[10px] text-muted-foreground">{otecPipelineEmpresas.meta.fuente}</p>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {otecCatalog.pipeline.stages.map((stage) => (
-            <article key={stage.name} className="rounded-xl border border-border bg-background/50 p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-foreground">{stage.name}</p>
-                <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{stage.items.length}</span>
-              </div>
-              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                {stage.items.map((company) => (
-                  <li key={company} className="inline-flex items-center gap-1">
-                    <Building2 size={11} /> {company}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+          {pipelineByEtapa.order.map((etapa) => {
+            const list = pipelineByEtapa.map.get(etapa) ?? [];
+            return (
+              <article
+                key={etapa}
+                className="flex max-h-[min(70vh,520px)] flex-col rounded-xl border border-border bg-background/50"
+              >
+                <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
+                  <p className="text-xs font-semibold text-foreground">{ETAPA_LABEL[etapa] ?? etapa}</p>
+                  <span className="rounded-md border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    {list.length}
+                  </span>
+                </div>
+                <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2 text-[11px]">
+                  {list.map((emp) => (
+                    <li key={emp.id} className="rounded-lg border border-border/80 bg-card/80 px-2.5 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-medium text-foreground">{emp.nombre}</span>
+                        <Building2 size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
+                      </div>
+                      <p className="mt-1 font-mono text-emerald-300/90">{clp(emp.monto_estimado_clp)}</p>
+                      {emp.contacto ? (
+                        <p className="mt-1 truncate text-[10px] text-muted-foreground">{emp.contacto}</p>
+                      ) : null}
+                      {emp.nota ? <p className="mt-1 text-[10px] text-muted-foreground">{emp.nota}</p> : null}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
         </div>
       </section>
     </div>

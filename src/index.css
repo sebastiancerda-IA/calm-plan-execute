@@ -127,6 +127,23 @@
 }
 
 @layer utilities {
+  /* IDMA Command Center — Bloomberg-lite: paneles densos, números tabulares */
+  .orquesta-panel {
+    @apply rounded-xl border border-border/90 bg-card shadow-sm;
+  }
+  .orquesta-panel-dense {
+    @apply orquesta-panel p-3 md:p-4;
+  }
+  .orquesta-kpi-value {
+    @apply font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground;
+  }
+  .orquesta-section-kicker {
+    @apply text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground;
+  }
+  .orquesta-command-title {
+    @apply text-lg font-semibold tracking-tight text-foreground md:text-xl;
+  }
+
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }

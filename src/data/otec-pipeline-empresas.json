@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "schema_version": "1",
+    "fuente": "pipeline interno OTEC-AMA (ejemplo operativo — reemplazar con datos reales)",
+    "etapas": ["prospecto", "negociacion", "propuesta_enviada", "cerrado"]
+  },
+  "empresas": [
+    { "id": "e1", "nombre": "Minera del Norte SpA", "etapa": "prospecto", "monto_estimado_clp": 4200000, "contacto": "comercial@ejemplo.cl", "nota": "Interés diplomado energía" },
+    { "id": "e2", "nombre": "AgroSur Ltda.", "etapa": "prospecto", "monto_estimado_clp": 2800000, "contacto": "", "nota": "Curso corto SST" },
+    { "id": "e3", "nombre": "Logística Pacífico", "etapa": "prospecto", "monto_estimado_clp": 5100000, "contacto": "ops@ejemplo.cl", "nota": "" },
+    { "id": "e4", "nombre": "Retail Costa", "etapa": "prospecto", "monto_estimado_clp": 1900000, "contacto": "", "nota": "Stand-by presupuesto" },
+    { "id": "e5", "nombre": "Constructora Horizonte", "etapa": "prospecto", "monto_estimado_clp": 6400000, "contacto": "rrhh@ejemplo.cl", "nota": "Diplomado prevención" },
+    { "id": "e6", "nombre": "Salud Integral", "etapa": "negociacion", "monto_estimado_clp": 3300000, "contacto": "capacita@ejemplo.cl", "nota": "Cohorte Q2" },
+    { "id": "e7", "nombre": "FoodTech Bio", "etapa": "negociacion", "monto_estimado_clp": 4500000, "contacto": "", "nota": "Borrador convenio" },
+    { "id": "e8", "nombre": "Forestal Los Andes", "etapa": "negociacion", "monto_estimado_clp": 5200000, "contacto": "sustentabilidad@ejemplo.cl", "nota": "" },
+    { "id": "e9", "nombre": "Puerto Austral", "etapa": "negociacion", "monto_estimado_clp": 7100000, "contacto": "", "nota": "Reunión técnica agendada" },
+    { "id": "e10", "nombre": "Energía del Sur", "etapa": "negociacion", "monto_estimado_clp": 8900000, "contacto": "formacion@ejemplo.cl", "nota": "Alta prioridad" },
+    { "id": "e11", "nombre": "Banco Regional (área PYME)", "etapa": "propuesta_enviada", "monto_estimado_clp": 12000000, "contacto": "eventos@ejemplo.cl", "nota": "Propuesta enviada 15/03" },
+    { "id": "e12", "nombre": "Telecom Sur", "etapa": "propuesta_enviada", "monto_estimado_clp": 6700000, "contacto": "", "nota": "Esperando OK legal" },
+    { "id": "e13", "nombre": "Hospital del Valle", "etapa": "propuesta_enviada", "monto_estimado_clp": 9800000, "contacto": "educa@ejemplo.cl", "nota": "Dos cohortes" },
+    { "id": "e14", "nombre": "Industria Química Beta", "etapa": "propuesta_enviada", "monto_estimado_clp": 4100000, "contacto": "", "nota": "" },
+    { "id": "e15", "nombre": "Transportes Unión", "etapa": "propuesta_enviada", "monto_estimado_clp": 3600000, "contacto": "seguridad@ejemplo.cl", "nota": "Follow-up semanal" },
+    { "id": "e16", "nombre": "Cooperativa Agrícola Norte", "etapa": "cerrado", "monto_estimado_clp": 5500000, "contacto": "", "nota": "Cerrado — facturación" },
+    { "id": "e17", "nombre": "Servicios Eléctricos Z", "etapa": "cerrado", "monto_estimado_clp": 7200000, "contacto": "comercial@ejemplo.cl", "nota": "Alta satisfacción" },
+    { "id": "e18", "nombre": "Municipalidad (convenio marco)", "etapa": "cerrado", "monto_estimado_clp": 15000000, "contacto": "", "nota": "Renovación anual" },
+    { "id": "e19", "nombre": "Academia Naval (taller)", "etapa": "cerrado", "monto_estimado_clp": 4800000, "contacto": "", "nota": "" },
+    { "id": "e20", "nombre": "Fundación Educación 360", "etapa": "cerrado", "monto_estimado_clp": 3100000, "contacto": "dir@ejemplo.cl", "nota": "Caso referencia" }
+  ]
+}

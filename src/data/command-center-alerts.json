@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "schema_version": "1",
+    "descripcion": "Alertas ejecutivas estáticas para el Dashboard; complementan KPIs live."
+  },
+  "items": [
+    {
+      "id": "a1",
+      "prioridad": "alta",
+      "titulo": "Revisar tramo Nov–Feb (saldo acumulado negativo proyectado)",
+      "href": "/finanzas"
+    },
+    {
+      "id": "a2",
+      "prioridad": "media",
+      "titulo": "Criterios CNA por debajo de N3: priorizar evidencia y responsables",
+      "href": "/acreditacion"
+    },
+    {
+      "id": "a3",
+      "prioridad": "media",
+      "titulo": "Pipeline OTEC: mover prospectos en negociación a propuesta",
+      "href": "/otec"
+    },
+    {
+      "id": "a4",
+      "prioridad": "baja",
+      "titulo": "Convenios sin link en Drive: completar trazabilidad",
+      "href": "/vcm"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock3, ShieldAlert } from 'lucide-react';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { PanelHeader, RingProgress } from '@/components/orquesta';
 import { supabase } from '@/integrations/supabase/client';
 import cnaCriteriaStatic from '@/data/cna-criteria.json';
 
@@ -54,25 +55,33 @@ export default function Acreditacion() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: 'Acreditacion CNA 2027' }]} />
 
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Tracker ejecutivo</p>
-            <h1 className="mt-1 text-2xl font-semibold text-foreground">CNA 2027 - Radar institucional</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Semaforo de 16 criterios con foco en cierre de brechas y trazabilidad de evidencia.</p>
-          </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-            <Clock3 size={12} /> {daysLeft} dias para meta 2027
-          </span>
-        </div>
+      <section className="orquesta-panel rounded-2xl border border-border/90 bg-card p-5 md:p-6">
+        <PanelHeader
+          kicker="CNA 2027"
+          title="Radar institucional"
+          description="Semáforo de 16 criterios N1/N2/N3 con foco en evidencia y responsables."
+          right={
+            <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground">
+              <Clock3 size={12} /> {daysLeft} días para meta 2027
+            </span>
+          }
+        />
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <article className="rounded-2xl border border-border bg-card p-5 lg:col-span-1">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Nivel superior</p>
-          <p className="mt-2 text-3xl font-semibold text-emerald-400">{stats.n3}/{stats.total}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Progreso N3: {stats.pct}%</p>
-          <div className="mt-3 h-2 rounded-full bg-secondary">
+        <article className="orquesta-panel flex flex-col items-center rounded-2xl border border-border/90 bg-card p-5 lg:col-span-1">
+          <p className="w-full text-xs uppercase tracking-[0.14em] text-muted-foreground">Progreso N3</p>
+          <div className="relative mt-3 flex h-[128px] w-[128px] items-center justify-center">
+            <RingProgress pct={stats.pct} size={128} stroke={9} className="absolute" />
+            <div className="relative z-10 flex flex-col items-center justify-center text-center">
+              <span className="font-mono text-2xl font-semibold text-emerald-400">{stats.pct}%</span>
+              <span className="text-[10px] text-muted-foreground">
+                {stats.n3}/{stats.total}
+              </span>
+            </div>
+          </div>
+          <p className="mt-3 text-center text-[11px] text-muted-foreground">Anillo = % criterios en N3 (sobre 16).</p>
+          <div className="mt-3 h-2 w-full rounded-full bg-secondary">
             <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(8, stats.pct)}%` }} />
           </div>
         </article>
