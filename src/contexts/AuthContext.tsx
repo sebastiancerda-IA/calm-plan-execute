@@ -137,13 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       safeApplySignedOut(message);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
 
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-      if (!nextSession?.user) {
+      if (!session?.user) {
         safeApplySignedOut(null);
         return;
       }
@@ -152,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
 
       setTimeout(() => {
-        void restoreRole(nextSession.user.id);
+        void restoreRole(session.user.id);
       }, 0);
     });
 

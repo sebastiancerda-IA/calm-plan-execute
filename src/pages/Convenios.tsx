@@ -1,7 +1,7 @@
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Handshake, Plus, FileText, Building2, Search, Filter, Download } from 'lucide-react';
+import { Handshake, Plus, FileText, Building2, Search, Filter, Download, Eye, Calendar, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -21,19 +21,19 @@ const ESTADO_MAP: Record<string, { label: string; color: string }> = {
   activo: { label: 'Activo', color: 'bg-idma-green/20 text-idma-green' },
   expirado: { label: 'Expirado', color: 'bg-destructive/20 text-destructive' },
   pendiente_firma: { label: 'Pendiente firma', color: 'bg-yellow-500/20 text-yellow-400' },
-  en_negociacion: { label: 'En negociaciÃ³n', color: 'bg-idma-blue/20 text-idma-blue' },
+  en_negociacion: { label: 'En negociación', color: 'bg-idma-blue/20 text-idma-blue' },
   suspendido: { label: 'Suspendido', color: 'bg-muted text-muted-foreground' },
 };
 
 const TIPO_OPTIONS = [
-  { value: 'practica_profesional', label: 'PrÃ¡ctica Profesional' },
-  { value: 'prosecucion_estudios', label: 'ProsecuciÃ³n de Estudios' },
-  { value: 'cooperacion_tecnica', label: 'CooperaciÃ³n TÃ©cnica' },
+  { value: 'practica_profesional', label: 'Práctica Profesional' },
+  { value: 'prosecucion_estudios', label: 'Prosecución de Estudios' },
+  { value: 'cooperacion_tecnica', label: 'Cooperación Técnica' },
   { value: 'descuento_arancel', label: 'Descuento Arancel' },
-  { value: 'colaboracion_institucional', label: 'ColaboraciÃ³n Institucional' },
+  { value: 'colaboracion_institucional', label: 'Colaboración Institucional' },
   { value: 'otec_empresa', label: 'OTEC Empresa' },
   { value: 'erasmus', label: 'Erasmus/Internacional' },
-  { value: 'investigacion', label: 'InvestigaciÃ³n' },
+  { value: 'investigacion', label: 'Investigación' },
 ] as const;
 
 const CONTRAPARTE_OPTIONS = [
@@ -42,14 +42,14 @@ const CONTRAPARTE_OPTIONS = [
   { value: 'ies_universidad', label: 'Universidad' },
   { value: 'ies_cft_ip', label: 'CFT/IP' },
   { value: 'sociedad_civil_ong', label: 'ONG' },
-  { value: 'organismo_publico', label: 'Organismo PÃºblico' },
-  { value: 'fundacion', label: 'FundaciÃ³n' },
+  { value: 'organismo_publico', label: 'Organismo Público' },
+  { value: 'fundacion', label: 'Fundación' },
   { value: 'internacional', label: 'Internacional' },
   { value: 'otro', label: 'Otro' },
 ] as const;
 
 const ESTADO_OPTIONS = [
-  { value: 'en_negociacion', label: 'En negociaciÃ³n' },
+  { value: 'en_negociacion', label: 'En negociación' },
   { value: 'pendiente_firma', label: 'Pendiente firma' },
   { value: 'activo', label: 'Activo' },
   { value: 'expirado', label: 'Expirado' },
@@ -63,49 +63,49 @@ const TEMPLATES: Record<string, TemplateDefaults> = {
   municipalidad: {
     tipo: 'cooperacion_tecnica',
     estado: 'en_negociacion',
-    descripcion: 'Convenio de cooperaciÃ³n tÃ©cnica con municipalidad para vinculaciÃ³n con el medio, prÃ¡cticas profesionales y actividades ambientales conjuntas.',
+    descripcion: 'Convenio de cooperación técnica con municipalidad para vinculación con el medio, prácticas profesionales y actividades ambientales conjuntas.',
     criterios_cna: ['C13', 'C14'],
   },
   empresa_privada: {
     tipo: 'practica_profesional',
     estado: 'en_negociacion',
-    descripcion: 'Convenio de prÃ¡ctica profesional con empresa del sector para inserciÃ³n laboral de estudiantes y desarrollo de competencias en terreno.',
+    descripcion: 'Convenio de práctica profesional con empresa del sector para inserción laboral de estudiantes y desarrollo de competencias en terreno.',
     criterios_cna: ['C4', 'C13'],
   },
   ies_universidad: {
     tipo: 'prosecucion_estudios',
     estado: 'en_negociacion',
-    descripcion: 'Convenio de articulaciÃ³n con universidad para prosecuciÃ³n de estudios de egresados/as CFT IDMA, con reconocimiento de crÃ©ditos.',
+    descripcion: 'Convenio de articulación con universidad para prosecución de estudios de egresados/as CFT IDMA, con reconocimiento de créditos.',
     criterios_cna: ['C3', 'C5'],
   },
   ies_cft_ip: {
     tipo: 'colaboracion_institucional',
     estado: 'en_negociacion',
-    descripcion: 'Convenio de colaboraciÃ³n institucional con CFT/IP para intercambio de buenas prÃ¡cticas, benchmarking y desarrollo conjunto.',
+    descripcion: 'Convenio de colaboración institucional con CFT/IP para intercambio de buenas prácticas, benchmarking y desarrollo conjunto.',
     criterios_cna: ['C6', 'C10'],
   },
   sociedad_civil_ong: {
     tipo: 'cooperacion_tecnica',
     estado: 'en_negociacion',
-    descripcion: 'Convenio con organizaciÃ³n de la sociedad civil para proyectos de vinculaciÃ³n con el medio y responsabilidad social.',
+    descripcion: 'Convenio con organización de la sociedad civil para proyectos de vinculación con el medio y responsabilidad social.',
     criterios_cna: ['C13', 'C14', 'C15'],
   },
   organismo_publico: {
     tipo: 'cooperacion_tecnica',
     estado: 'en_negociacion',
-    descripcion: 'Convenio marco con organismo pÃºblico para desarrollo de programas, capacitaciones y apoyo tÃ©cnico institucional.',
+    descripcion: 'Convenio marco con organismo público para desarrollo de programas, capacitaciones y apoyo técnico institucional.',
     criterios_cna: ['C6', 'C13'],
   },
   fundacion: {
     tipo: 'colaboracion_institucional',
     estado: 'en_negociacion',
-    descripcion: 'Convenio con fundaciÃ³n para becas, programas formativos y proyectos de impacto social-ambiental.',
+    descripcion: 'Convenio con fundación para becas, programas formativos y proyectos de impacto social-ambiental.',
     criterios_cna: ['C13', 'C15'],
   },
   internacional: {
     tipo: 'erasmus',
     estado: 'en_negociacion',
-    descripcion: 'Convenio internacional de movilidad e intercambio acadÃ©mico para docentes y estudiantes.',
+    descripcion: 'Convenio internacional de movilidad e intercambio académico para docentes y estudiantes.',
     criterios_cna: ['C5', 'C16'],
   },
   otro: {
@@ -146,10 +146,16 @@ const INITIAL_FORM: ConvenioInsert = {
   criterios_cna: TEMPLATES.empresa_privada.criterios_cna || [],
 };
 
+function diasParaVencer(fechaTermino: string | null): number | null {
+  if (!fechaTermino) return null;
+  return Math.ceil((new Date(fechaTermino).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
 export default function Convenios() {
   const { isDirector, session, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [quickView, setQuickView] = useState<any | null>(null);
   const [form, setForm] = useState<ConvenioInsert>({ ...INITIAL_FORM });
   const [filterEstado, setFilterEstado] = useState<string>('todos');
   const [search, setSearch] = useState('');
@@ -224,7 +230,7 @@ export default function Convenios() {
 
   const handleSubmit = () => {
     if (!form.nombre_institucion.trim()) {
-      toast.error('El nombre de la instituciÃ³n es obligatorio');
+      toast.error('El nombre de la institución es obligatorio');
       return;
     }
     createMutation.mutate(form);
@@ -324,7 +330,7 @@ export default function Convenios() {
         {[
           { label: 'Total', value: total, icon: FileText },
           { label: 'Activos', value: activos, icon: Building2 },
-          { label: 'En negociaciÃ³n', value: enNegociacion, icon: Handshake },
+          { label: 'En negociación', value: enNegociacion, icon: Handshake },
           { label: 'Tipos', value: new Set(convenios.map((c: any) => c.tipo)).size, icon: FileText },
         ].map((m) => (
           <div key={m.label} className="rounded-lg border border-border bg-card p-3">
@@ -381,7 +387,7 @@ export default function Convenios() {
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar instituciÃ³n..."
+              placeholder="Buscar institución..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-8 h-8 text-xs"
@@ -451,9 +457,11 @@ export default function Convenios() {
                   <th className="text-left py-2 px-3">Tipo</th>
                   <th className="text-left py-2 px-3">Contraparte</th>
                   <th className="text-left py-2 px-3">Estado</th>
+                  <th className="text-left py-2 px-3">Vence en</th>
                   <th className="text-left py-2 px-3">Vigencia</th>
                   <th className="text-left py-2 px-3">Drive</th>
                   <th className="text-left py-2 px-3">CNA</th>
+                  <th className="text-left py-2 px-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -461,19 +469,35 @@ export default function Convenios() {
                   const estado = ESTADO_MAP[c.estado] || ESTADO_MAP.activo;
                   const tipoLabel = TIPO_OPTIONS.find(t => t.value === c.tipo)?.label || c.tipo;
                   const contraLabel = CONTRAPARTE_OPTIONS.find(t => t.value === c.contraparte)?.label || c.contraparte;
+                  const dias = diasParaVencer(c.fecha_termino);
                   return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                    <tr
+                      key={c.id}
+                      className="border-b border-border/50 hover:bg-secondary/20 transition-colors cursor-pointer"
+                      onClick={() => setQuickView(c)}
+                    >
                       <td className="py-2 px-3 font-medium text-foreground">{c.nombre_institucion}</td>
                       <td className="py-2 px-3 text-muted-foreground">{tipoLabel}</td>
                       <td className="py-2 px-3 text-muted-foreground">{contraLabel}</td>
                       <td className="py-2 px-3">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${estado.color}`}>{estado.label}</span>
                       </td>
-                      <td className="py-2 px-3 text-muted-foreground font-mono">
+                      <td className="py-2 px-3 font-mono">
+                        {dias === null ? (
+                          <span className="text-muted-foreground text-[10px]">—</span>
+                        ) : dias < 0 ? (
+                          <span className="text-rose-400 text-[10px]">Expirado</span>
+                        ) : (
+                          <span className={`text-[10px] font-semibold ${dias < 30 ? 'text-rose-400' : dias < 90 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                            {dias}d
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-muted-foreground font-mono text-[10px]">
                         {c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString('es-CL') : '—'}
                         {c.fecha_termino ? ` → ${new Date(c.fecha_termino).toLocaleDateString('es-CL')}` : ''}
                       </td>
-                      <td className="py-2 px-3">
+                      <td className="py-2 px-3" onClick={e => e.stopPropagation()}>
                         {c.archivo_drive_url ? (
                           <a
                             href={c.archivo_drive_url}
@@ -484,7 +508,7 @@ export default function Convenios() {
                             <FileText size={10} /> Ver doc
                           </a>
                         ) : (
-                          <span className="text-muted-foreground text-[10px]">ï¿½?"</span>
+                          <span className="text-muted-foreground text-[10px]">—</span>
                         )}
                       </td>
                       <td className="py-2 px-3">
@@ -494,7 +518,16 @@ export default function Convenios() {
                               <span key={cr} className="text-[9px] px-1.5 py-0.5 rounded bg-idma-green/10 text-idma-green">{cr}</span>
                             ))}
                           </div>
-                        ) : <span className="text-muted-foreground">ï¿½?"</span>}
+                        ) : <span className="text-muted-foreground text-[10px]">—</span>}
+                      </td>
+                      <td className="py-2 px-3" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => setQuickView(c)}
+                          className="p-1 rounded hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+                          title="Vista rápida"
+                        >
+                          <Eye size={12} />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -505,18 +538,18 @@ export default function Convenios() {
         </div>
       )}
 
-      {/* Create Dialog ï¿½?" single step */}
+      {/* Create dialog — single step */}
       <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); else setOpen(true); }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuevo Convenio</DialogTitle>
             <DialogDescription>
-              Selecciona la contraparte para cargar la plantilla automÃ¡ticamente, luego completa los datos clave.
+              Selecciona la contraparte para cargar la plantilla automáticamente, luego completa los datos clave.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
-            {/* Contraparte ï¿½?" primer campo, aplica plantilla al cambiar */}
+            {/* Contraparte: primer campo; aplica plantilla al cambiar */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Tipo de contraparte</Label>
@@ -539,7 +572,7 @@ export default function Convenios() {
             </div>
 
             <div>
-              <Label className="text-xs">Nombre de la InstituciÃ³n *</Label>
+              <Label className="text-xs">Nombre de la Institución *</Label>
               <Input
                 value={form.nombre_institucion}
                 onChange={e => updateField('nombre_institucion', e.target.value)}
@@ -592,7 +625,7 @@ export default function Convenios() {
                 />
               </div>
               <div>
-                <Label className="text-xs">Fecha tÃ©rmino</Label>
+                <Label className="text-xs">Fecha término</Label>
                 <Input
                   type="date"
                   value={form.fecha_termino || ''}
@@ -603,7 +636,7 @@ export default function Convenios() {
             </div>
 
             <div>
-              <Label className="text-xs">DescripciÃ³n</Label>
+              <Label className="text-xs">Descripción</Label>
               <Textarea
                 value={form.descripcion || ''}
                 onChange={e => updateField('descripcion', e.target.value)}
@@ -670,8 +703,122 @@ export default function Convenios() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal vista rápida */}
+      {quickView && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setQuickView(null)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl mx-4 max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setQuickView(null)}
+              className="absolute right-4 top-4 rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="mb-4 flex items-start gap-3">
+              <Handshake size={20} className="mt-0.5 shrink-0 text-idma-green" />
+              <div>
+                <h2 className="text-base font-semibold text-foreground leading-tight">{quickView.nombre_institucion}</h2>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${(ESTADO_MAP[quickView.estado] || ESTADO_MAP.activo).color}`}>
+                    {(ESTADO_MAP[quickView.estado] || ESTADO_MAP.activo).label}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                    {TIPO_OPTIONS.find(t => t.value === quickView.tipo)?.label || quickView.tipo}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+              <div className="rounded-md border border-border bg-background/40 p-3">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Contraparte</p>
+                <p className="text-foreground font-medium">
+                  {CONTRAPARTE_OPTIONS.find(t => t.value === quickView.contraparte)?.label || quickView.contraparte || '—'}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-3">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Días para vencer</p>
+                {(() => {
+                  const d = diasParaVencer(quickView.fecha_termino);
+                  if (d === null) return <p className="text-foreground font-medium">Sin fecha</p>;
+                  if (d < 0) return <p className="text-rose-400 font-semibold">Expirado ({Math.abs(d)}d)</p>;
+                  return <p className={`font-semibold ${d < 30 ? 'text-rose-400' : d < 90 ? 'text-amber-400' : 'text-foreground'}`}>{d} días</p>;
+                })()}
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-3">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar size={10} /> Inicio
+                </p>
+                <p className="text-foreground font-medium font-mono">
+                  {quickView.fecha_inicio ? new Date(quickView.fecha_inicio).toLocaleDateString('es-CL') : '—'}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-3">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar size={10} /> Término
+                </p>
+                <p className="text-foreground font-medium font-mono">
+                  {quickView.fecha_termino ? new Date(quickView.fecha_termino).toLocaleDateString('es-CL') : '—'}
+                </p>
+              </div>
+            </div>
+
+            {quickView.descripcion && (
+              <div className="mb-4 rounded-md border border-border bg-background/40 p-3">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Descripción</p>
+                <p className="text-xs text-foreground leading-relaxed">{quickView.descripcion}</p>
+              </div>
+            )}
+
+            {quickView.criterios_cna?.length > 0 && (
+              <div className="mb-4">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-2">Criterios CNA</p>
+                <div className="flex flex-wrap gap-1">
+                  {quickView.criterios_cna.map((cr: string) => (
+                    <span key={cr} className="text-[10px] px-2 py-0.5 rounded bg-idma-green/10 text-idma-green border border-idma-green/20">{cr}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(quickView.persona_contacto || quickView.email_contacto) && (
+              <div className="mb-4 rounded-md border border-border bg-background/40 p-3 text-xs">
+                <p className="text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Contacto</p>
+                {quickView.persona_contacto && <p className="text-foreground font-medium">{quickView.persona_contacto}</p>}
+                {quickView.email_contacto && <p className="text-muted-foreground">{quickView.email_contacto}</p>}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-2 border-t border-border">
+              {quickView.archivo_drive_url ? (
+                <a
+                  href={quickView.archivo_drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                >
+                  <FileText size={12} /> Ver documento Drive
+                </a>
+              ) : (
+                <span className="text-xs text-muted-foreground">Sin documento adjunto</span>
+              )}
+              <button
+                onClick={() => setQuickView(null)}
+                className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-

@@ -10,9 +10,14 @@ const SUPABASE_PUBLISHABLE_KEY = getSupabasePublishableKey();
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    headers: {
+      Accept: 'application/json; charset=utf-8',
+    },
+  },
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });
